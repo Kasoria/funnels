@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
+import type { FunnelDict, TrustTestimonial, TrustStats, FunnelResult } from "@/locales/types";
 import { FunnelLogo } from "./FunnelLogo";
 import { FunnelBar } from "./FunnelBar";
 
@@ -39,33 +40,9 @@ function useCountdown(): CountdownTime | null {
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
-type Answers = Record<number, string>;
-
-interface TrustContent1 {
-  bridge: string;
-  quote: string;
-  author: string;
-  company: string;
-  context: string;
-}
-
-interface StatItem {
-  value: string;
-  label: string;
-}
-
-interface TrustContent2 {
-  bridge: string;
-  headline: string;
-  sub: string;
-  stats: StatItem[];
-}
-
-interface ResultContent {
-  tag: string;
-  h: string;
-  b: string;
-}
+// Answers store the selected option INDEX (0-based), not the string value.
+// This makes trust/result logic language-independent.
+type Answers = Record<number, number>;
 
 interface LeadData {
   name: string;
@@ -73,13 +50,11 @@ interface LeadData {
   phone: string;
 }
 
-// ─── QUESTION SLIDES ──────────────────────────────────────────────────────────
-
 interface QuestionSlideData {
   type: "q";
   qKey: number;
   q: string;
-  opts: string[];
+  opts: readonly string[];
 }
 
 interface TrustSlideData {
@@ -89,253 +64,131 @@ interface TrustSlideData {
 
 type SlideData = QuestionSlideData | TrustSlideData;
 
-const SLIDES: SlideData[] = [
-  {
-    type: "q", qKey: 0,
-    q: "Was beschreibt dein Unternehmen am besten?",
-    opts: ["Handwerk & Bau", "Dienstleistung & Beratung", "Gesundheit & Beauty", "Gastronomie & Handel", "Sonstiges"],
-  },
-  {
-    type: "q", qKey: 1,
-    q: "Wie sieht deine Website-Situation gerade aus?",
-    opts: ["Ich habe noch keine Website", "Ich habe eine – sie bringt kaum Anfragen", "Ich habe eine – bin damit unzufrieden"],
-  },
-  { type: "trust", trustFn: "trust1" },
-  {
-    type: "q", qKey: 2,
-    q: "Was ist dein größtes Online-Problem?",
-    opts: ["Zu wenig Kontaktanfragen", "Kaum bei Google sichtbar", "Veraltetes / unprofessionelles Design", "Technik-Probleme & schlechte Ladezeit"],
-  },
-  {
-    type: "q", qKey: 3,
-    q: "Wie viele Anfragen kommen aktuell pro Monat über deine Website?",
-    opts: ["Kaum oder keine", "1–3 Anfragen", "4–10 Anfragen", "Mehr als 10"],
-  },
-  { type: "trust", trustFn: "trust2" },
-  {
-    type: "q", qKey: 4,
-    q: "Was ist dein wichtigstes Ziel für die nächsten 6 Monate?",
-    opts: ["Deutlich mehr Kontaktanfragen", "Besser bei Google gefunden werden", "Professionellerer Markenauftritt", "Alles – komplett neu starten"],
-  },
-  {
-    type: "q", qKey: 5,
-    q: "Was ist dein ungefähres Budget für eine neue Website?",
-    opts: ["Unter 500 €", "500 – 1.500 €", "1.500 – 4.000 €", "4.000 € und mehr"],
-  },
-];
+// ─── SLIDE BUILDER ────────────────────────────────────────────────────────────
 
-const QUESTIONS = SLIDES.filter((s): s is QuestionSlideData => s.type === "q");
-
-// ─── CONTEXTUAL TRUST CONTENT ─────────────────────────────────────────────────
-
-function getTrust1(answers: Answers): TrustContent1 {
-  const situation = answers[1] ?? "";
-
-  if (situation.includes("keine Website")) {
-    return {
-      bridge: "Viele unserer Kunden haben genau da gestartet.",
-      quote: "Mega zufrieden! Wir treten jetzt endlich professionell bei Ausschreibungen auf.",
-      author: "Vasil Stoyanov",
-      company: "SPEDO GmbH · Hamburg",
-      context: "Logistik & Kurierdienst · vorher: keine Website · Projekt: 11 Tage",
-    };
-  }
-  if (situation.includes("kaum Anfragen")) {
-    return {
-      bridge: "Das hören wir oft – und es lässt sich konkret lösen.",
-      quote: "Ich bin absolut begeistert. Das Buchungstool meiner Website wurde grandios – und kommt auch bei meiner Kundschaft extrem gut an.",
-      author: "Michelle Rathjen",
-      company: "Jingles Katzenstube · Niedersachsen",
-      context: "Katzenpension · Anfragen laufen jetzt automatisch rein",
-    };
-  }
-  return {
-    bridge: "Damit bist du nicht allein.",
-    quote: "Wir sind absolut zufrieden mit dem Ergebnis. Die Website ist Hammer, die Kunden sind auch begeistert.",
-    author: "Denitsa Deneva",
-    company: "Tattoo Avenue · Neu Wulmstorf",
-    context: "Tattoo & Piercing Studio · Neues Design + Local SEO",
-  };
+function buildSlides(dict: FunnelDict): SlideData[] {
+  const [q0, q1, q2, q3, q4, q5] = dict.quiz.questions;
+  return [
+    { type: "q", qKey: 0, q: q0.q, opts: q0.opts },
+    { type: "q", qKey: 1, q: q1.q, opts: q1.opts },
+    { type: "trust", trustFn: "trust1" },
+    { type: "q", qKey: 2, q: q2.q, opts: q2.opts },
+    { type: "q", qKey: 3, q: q3.q, opts: q3.opts },
+    { type: "trust", trustFn: "trust2" },
+    { type: "q", qKey: 4, q: q4.q, opts: q4.opts },
+    { type: "q", qKey: 5, q: q5.q, opts: q5.opts },
+  ];
 }
 
-function getTrust2(answers: Answers): TrustContent2 {
-  const problem = answers[2] ?? "";
+// ─── ANSWER → CONTENT RESOLVERS ───────────────────────────────────────────────
 
-  if (problem.includes("Kontaktanfragen")) {
-    return {
-      bridge: "Zu wenig Anfragen ist kein Traffic-Problem. Es ist ein Conversion-Problem.",
-      headline: "Die meisten Websites verlieren Leads still und leise.",
-      sub: "Kein klarer Kontaktweg, kein Vertrauen, kein Formular, das funktioniert. Das beheben wir gezielt – nicht mit mehr Werbung, sondern mit besserer Seite.",
-      stats: [
-        { value: "3×",   label: "Mehr Anfragen nach Relaunch" },
-        { value: "< 2s", label: "Ladezeit" },
-        { value: "24/7", label: "Automatische Leaderfassung" },
-        { value: "7–14", label: "Tage bis Launch" },
-      ],
-    };
-  }
-  if (problem.includes("Google")) {
-    return {
-      bridge: "Google-Sichtbarkeit ist kein Zufall – sie ist Architektur.",
-      headline: "Technik, Texte, Struktur. In dieser Reihenfolge.",
-      sub: "Lokales SEO funktioniert, wenn die Seite technisch sauber ist und die richtigen Signale sendet. Wir bauen das von Anfang an rein.",
-      stats: [
-        { value: "Seite 1", label: "Lokale Google-Suche" },
-        { value: "< 2s",   label: "Core Web Vitals grün" },
-        { value: "7–14",   label: "Tage bis Launch" },
-        { value: "100%",   label: "On-Page SEO inklusive" },
-      ],
-    };
-  }
-  if (problem.includes("Design")) {
-    return {
-      bridge: "Design entscheidet in Sekunden – bevor jemand liest.",
-      headline: "Kein Template. Kein Kompromiss.",
-      sub: "Jedes Projekt ist individuell auf deine Zielgruppe und Positionierung ausgerichtet. Das sieht man – und das fühlen deine Besucher.",
-      stats: [
-        { value: "100%", label: "Individuelles Design" },
-        { value: "< 2s", label: "Ladezeit" },
-        { value: "7–14", label: "Tage bis Launch" },
-        { value: "3+",   label: "Projekte live" },
-      ],
-    };
-  }
-  return {
-    bridge: "Schnell, stabil, sauber. Das ist die Grundlage.",
-    headline: "Technik ist kein Bonus – sie ist die Basis.",
-    sub: "Performance, DSGVO, Mobile, SSL, Backups – alles läuft von Tag 1. Du musst dich nicht darum kümmern.",
-    stats: [
-      { value: "< 2s",  label: "Ladezeit" },
-      { value: "100%",  label: "Mobile optimiert" },
-      { value: "7–14",  label: "Tage bis Launch" },
-      { value: "99.9%", label: "Uptime" },
-    ],
-  };
+function resolveTrust1(answers: Answers, dict: FunnelDict): TrustTestimonial {
+  const q1 = answers[1] ?? -1;
+  if (q1 === 0) return dict.trust1[0]; // no website
+  if (q1 === 1) return dict.trust1[1]; // few leads
+  return dict.trust1[2];
 }
 
-function getResult(answers: Answers): ResultContent {
-  if ((answers[5] ?? "").includes("Unter 500")) {
-    return {
-      tag: "Budget-Check",
-      h: "Lass uns kurz sprechen.",
-      b: "Unsere Websites starten bei 799 €. Im kostenlosen Gespräch schauen wir, was in deiner Situation sinnvoll ist.",
-    };
-  }
-  if (answers[1]?.includes("keine Website") || answers[4]?.includes("komplett")) {
-    return {
-      tag: "Neuer Auftritt",
-      h: "Du bist bereit für einen starken Start.",
-      b: "Wir bauen dir in 7–14 Tagen eine Website, die vom ersten Tag an Anfragen generiert.",
-    };
-  }
-  if (answers[2]?.includes("Google") || answers[4]?.includes("Google")) {
-    return {
-      tag: "SEO-Potenzial",
-      h: "Dein Google-Ranking kostet dich täglich Kunden.",
-      b: "Mit der richtigen Seitenstruktur und lokalem SEO kannst du messbar mehr Anfragen gewinnen.",
-    };
-  }
-  if (answers[3]?.includes("keine") || answers[3]?.includes("1–3")) {
-    return {
-      tag: "Conversion-Problem",
-      h: "Mehr Traffic hilft nicht – deine Seite muss konvertieren.",
-      b: "Das Problem liegt meist in fehlenden Kontaktwegen. Wir beheben das konkret – in 7–14 Tagen.",
-    };
-  }
-  return {
-    tag: "Wachstumspotenzial",
-    h: "Du weißt, dass mehr möglich ist.",
-    b: "Ein professioneller Auftritt ist oft der Unterschied zwischen Auftrag und Absprung.",
-  };
+function resolveTrust2(answers: Answers, dict: FunnelDict): TrustStats {
+  const q2 = answers[2] ?? -1;
+  if (q2 === 0) return dict.trust2[0]; // conversion
+  if (q2 === 1) return dict.trust2[1]; // seo
+  if (q2 === 2) return dict.trust2[2]; // design
+  return dict.trust2[3];              // tech / default
+}
+
+function resolveResult(answers: Answers, dict: FunnelDict): FunnelResult {
+  if (answers[5] === 0)                          return dict.results[0]; // budget
+  if (answers[1] === 0 || answers[4] === 3)      return dict.results[1]; // new site
+  if (answers[2] === 1 || answers[4] === 1)      return dict.results[2]; // seo
+  if (answers[3] === 0 || answers[3] === 1)      return dict.results[3]; // conversion
+  return dict.results[4];                                                 // default
 }
 
 // ─── SHARED LAYOUT ────────────────────────────────────────────────────────────
 
-const SCREEN_BASE = "min-h-screen flex flex-col items-center justify-center font-body px-5 py-16 relative";
-const CARD = "w-full max-w-[480px]";
+const SCREEN = "min-h-screen flex flex-col items-center justify-center font-body px-5 py-16 relative";
+const CARD   = "w-full max-w-[480px]";
 
 // ─── LANDING ──────────────────────────────────────────────────────────────────
 
-interface LandingProps {
-  onStart: () => void;
-}
-
-function Landing({ onStart }: LandingProps) {
+function Landing({ dict, onStart }: { dict: FunnelDict; onStart: () => void }) {
   const countdown = useCountdown();
+  const { landing, countdown: cd } = dict;
 
   return (
-    <div className={`${SCREEN_BASE} bg-[#0a0a0a]`}>
+    <div className={`${SCREEN} bg-[#0a0a0a]`}>
       <FunnelLogo />
       <div className={`${CARD} flex flex-col gap-7 text-center items-center`}>
 
         <div className="au d1">
-          <span className="text-[10px] tracking-[0.16em] uppercase text-[rgba(240,239,233,0.32)]">
-            Kostenloser Website-Check · 2 Minuten
+          <span className="text-[10px] font-medium tracking-[0.16em] uppercase text-[rgba(240,239,233,0.65)]">
+            {landing.eyebrow}
           </span>
         </div>
 
         <div className="au d2">
           <h1 className="font-heading text-[clamp(28px,6vw,46px)] font-normal leading-[1.12] text-[#f0efe9]">
-            Deine Website kostet<br />
-            <em className="text-[rgba(240,239,233,0.38)]">dich täglich Kunden.</em>
+            {landing.headline}<br />
+            <em className="text-[#E8C87A]">{landing.headlineAccent}</em>
           </h1>
         </div>
 
         <div className="au d3">
-          <p className="text-[14.5px] leading-[1.78] text-[rgba(240,239,233,0.5)] max-w-[380px]">
-            5 kurze Fragen – und wir melden uns persönlich bei dir mit einer konkreten Einschätzung.
+          <p className="text-[14.5px] leading-[1.78] text-[rgba(240,239,233,0.65)] max-w-[380px]">
+            {landing.subtext}
           </p>
         </div>
 
         <div className="au d4 flex flex-col gap-3 w-full max-w-[340px] text-left">
-          {["5 Fragen beantworten", "Wir analysieren deine Situation", "Christian meldet sich persönlich"].map(
-            (step, index) => (
-              <div key={index} className="flex items-start gap-3.5">
-                <div className="w-6 h-6 rounded-full flex-shrink-0 border border-white/20 flex items-center justify-center text-[10px] font-bold text-[rgba(240,239,233,0.45)] mt-px">
-                  {index + 1}
-                </div>
-                <span className="text-[13px] text-[rgba(240,239,233,0.55)] leading-[1.5]">{step}</span>
+          {(["✦", "◎", "→"] as const).map((icon, index) => (
+            <div key={index} className="flex items-start gap-3.5">
+              <div className="w-6 h-6 rounded-full flex-shrink-0 border border-[rgba(232,200,122,0.35)] flex items-center justify-center text-[10px] font-bold text-[#E8C87A] mt-px">
+                {icon}
               </div>
-            )
-          )}
+              <span className="text-[13px] text-[rgba(240,239,233,0.7)] leading-[1.5]">{landing.steps[index]}</span>
+            </div>
+          ))}
         </div>
 
         {countdown && (
           <div className="au d4 flex flex-col gap-2 items-center">
-            <span className="inline-flex items-center bg-[rgba(255,220,100,0.1)] border border-[rgba(255,220,100,0.25)] text-[#ffd864] rounded-full px-3 py-1 text-[11px] font-bold tracking-[0.06em] uppercase">
-              ⚡ Einführungsangebot endet in
+            <span className="inline-flex items-center bg-[rgba(232,200,122,0.12)] border border-[rgba(232,200,122,0.3)] text-[#E8C87A] rounded-full px-3 py-1 text-[11px] font-bold tracking-[0.06em] uppercase">
+              {cd.badge}
             </span>
             <div className="flex items-center gap-1.5 justify-center">
-              {[{ val: countdown.h, label: "Std" }, { val: countdown.m, label: "Min" }, { val: countdown.s, label: "Sek" }].map(
-                ({ val, label }, idx) => (
-                  <>
-                    <div key={label} className="bg-white/[0.06] border border-white/10 rounded-[7px] px-3 py-2 min-w-[52px] text-center">
-                      <div className="text-[22px] font-bold text-[#f0efe9] leading-none">{val}</div>
-                      <div className="text-[9px] tracking-[0.1em] uppercase text-[rgba(240,239,233,0.3)] mt-0.5">{label}</div>
-                    </div>
-                    {idx < 2 && (
-                      <span key={`sep-${idx}`} className="text-[20px] text-[rgba(240,239,233,0.2)] mb-2">:</span>
-                    )}
-                  </>
-                )
-              )}
+              {([
+                { val: countdown.h, label: cd.hours },
+                { val: countdown.m, label: cd.minutes },
+                { val: countdown.s, label: cd.seconds },
+              ] as const).map(({ val, label }, idx) => (
+                <Fragment key={label}>
+                  <div className="bg-[rgba(232,200,122,0.06)] border border-[rgba(232,200,122,0.2)] rounded-[7px] px-3 py-2 min-w-[52px] text-center">
+                    <div className="text-[22px] font-bold text-[#f0efe9] leading-none">{val}</div>
+                    <div className="text-[9px] font-medium tracking-[0.1em] uppercase text-[rgba(240,239,233,0.65)] mt-0.5">{label}</div>
+                  </div>
+                  {idx < 2 && (
+                    <span className="text-[20px] text-[rgba(240,239,233,0.4)] mb-2">:</span>
+                  )}
+                </Fragment>
+              ))}
             </div>
           </div>
         )}
 
         <div className="au d5 flex flex-col gap-2 w-full">
           <button
-            className="bg-[#f0efe9] text-[#0a0a0a] border-none px-7 py-[15px] font-body font-bold text-xs tracking-[0.07em] uppercase rounded-[9px] cursor-pointer hover:opacity-90 transition-opacity w-full"
+            className="bg-[#E8C87A] text-[#2A1800] border-none px-7 py-[15px] font-body font-bold text-xs tracking-[0.07em] uppercase rounded-[9px] cursor-pointer hover:opacity-90 transition-opacity w-full"
             onClick={onStart}
           >
-            Check starten →
+            {landing.cta}
           </button>
-          <p className="text-[11px] text-[rgba(240,239,233,0.2)] text-center">Kostenlos · Kein Spam · DSGVO-konform</p>
+          <p className="text-[11px] font-medium text-[rgba(240,239,233,0.7)] text-center">{landing.security}</p>
         </div>
       </div>
 
-      <div className="absolute bottom-5 text-[10px] text-[rgba(240,239,233,0.15)]">
-        © 2026 Kasoria · kasoria.com
+      <div className="absolute bottom-5 text-[10px] font-medium text-[rgba(240,239,233,0.55)]">
+        {landing.footer}
       </div>
     </div>
   );
@@ -346,26 +199,27 @@ function Landing({ onStart }: LandingProps) {
 interface QuestionSlideProps {
   slide: QuestionSlideData;
   qDone: number;
-  qTotal: number;
-  onAnswer: (value: string) => void;
+  questionCount: number;
+  dict: FunnelDict;
+  onAnswer: (index: number) => void;
 }
 
-function QuestionSlide({ slide, qDone, qTotal, onAnswer }: QuestionSlideProps) {
-  const [selected, setSelected] = useState<string | null>(null);
+function QuestionSlide({ slide, qDone, questionCount, dict, onAnswer }: QuestionSlideProps) {
+  const [selected, setSelected] = useState<number | null>(null);
 
   return (
-    <div className={`${SCREEN_BASE} bg-[#0a0a0a]`}>
+    <div className={`${SCREEN} bg-[#0a0a0a]`}>
       <FunnelLogo />
-      <FunnelBar done={qDone} total={qTotal} />
+      <FunnelBar done={qDone} total={questionCount} />
 
       <div className={`${CARD} flex flex-col gap-6`}>
 
         <div className="au d1 flex justify-between">
-          <span className="text-[10px] tracking-[0.12em] uppercase text-[rgba(240,239,233,0.28)]">
-            Frage {qDone + 1} / {qTotal}
+          <span className="text-[10px] font-medium tracking-[0.12em] uppercase text-[rgba(240,239,233,0.65)]">
+            {dict.quiz.progressLabel} {qDone + 1} / {questionCount}
           </span>
-          <span className="text-[10px] text-[rgba(240,239,233,0.18)]">
-            {Math.round((qDone / qTotal) * 100)}%
+          <span className="text-[10px] text-[#E8C87A] font-semibold">
+            {Math.round((qDone / questionCount) * 100)}%
           </span>
         </div>
 
@@ -379,15 +233,17 @@ function QuestionSlide({ slide, qDone, qTotal, onAnswer }: QuestionSlideProps) {
           {slide.opts.map((option, index) => (
             <button
               key={option}
-              onClick={() => setSelected(option)}
+              onClick={() => setSelected(index)}
               className={`text-left px-[18px] py-[14px] rounded-[9px] cursor-pointer text-[13.5px] font-normal transition-all duration-[180ms] flex items-center gap-3 leading-[1.45] w-full font-body ${
-                selected === option
-                  ? "bg-[#f0efe9] text-[#0a0a0a] border border-[#f0efe9] font-semibold"
-                  : "bg-transparent border border-white/[0.11] text-[rgba(240,239,233,0.88)] hover:border-white/30 hover:bg-white/[0.04]"
+                selected === index
+                  ? "bg-[#E8C87A] text-[#2A1800] border border-[#E8C87A] font-semibold"
+                  : "bg-transparent border border-[rgba(232,200,122,0.18)] text-[rgba(240,239,233,0.88)] hover:border-[rgba(232,200,122,0.4)] hover:bg-[rgba(232,200,122,0.04)]"
               }`}
             >
               <span className={`w-[22px] h-[22px] rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold border ${
-                selected === option ? "border-[rgba(10,10,10,0.4)] text-[rgba(10,10,10,0.4)]" : "border-current text-[rgba(255,255,255,0.25)]"
+                selected === index
+                  ? "border-[rgba(42,24,0,0.5)] text-[rgba(42,24,0,0.6)]"
+                  : "border-[rgba(232,200,122,0.4)] text-[rgba(232,200,122,0.65)]"
               }`}>
                 {String.fromCharCode(65 + index)}
               </span>
@@ -398,11 +254,11 @@ function QuestionSlide({ slide, qDone, qTotal, onAnswer }: QuestionSlideProps) {
 
         <div className="au d4">
           <button
-            className="bg-[#f0efe9] text-[#0a0a0a] border-none px-7 py-[15px] font-body font-bold text-xs tracking-[0.07em] uppercase rounded-[9px] cursor-pointer hover:opacity-90 transition-opacity w-full disabled:opacity-30 disabled:cursor-default"
-            onClick={() => { if (selected) onAnswer(selected); }}
-            disabled={!selected}
+            className="bg-[#E8C87A] text-[#2A1800] border-none px-7 py-[15px] font-body font-bold text-xs tracking-[0.07em] uppercase rounded-[9px] cursor-pointer hover:opacity-90 transition-opacity w-full disabled:opacity-30 disabled:cursor-default"
+            onClick={() => { if (selected !== null) onAnswer(selected); }}
+            disabled={selected === null}
           >
-            Weiter →
+            {dict.quiz.continueBtn}
           </button>
         </div>
       </div>
@@ -413,44 +269,45 @@ function QuestionSlide({ slide, qDone, qTotal, onAnswer }: QuestionSlideProps) {
 // ─── TRUST SLIDE: TESTIMONIAL ─────────────────────────────────────────────────
 
 interface TestimonialSlideProps {
-  content: TrustContent1;
+  content: TrustTestimonial;
   qDone: number;
-  qTotal: number;
+  questionCount: number;
+  continueBtn: string;
   onNext: () => void;
 }
 
-function TestimonialSlide({ content, qDone, qTotal, onNext }: TestimonialSlideProps) {
+function TestimonialSlide({ content, qDone, questionCount, continueBtn, onNext }: TestimonialSlideProps) {
   return (
-    <div className={`${SCREEN_BASE} bg-[#0d0c0b]`}>
+    <div className={`${SCREEN} bg-[#0f0f0d]`}>
       <FunnelLogo />
-      <FunnelBar done={qDone} total={qTotal} />
+      <FunnelBar done={qDone} total={questionCount} />
 
       <div className={`${CARD} flex flex-col gap-7`}>
 
         <div className="au d1">
-          <p className="text-[13px] text-[rgba(240,239,233,0.42)] leading-[1.6] italic">
+          <p className="text-[13px] text-[rgba(240,239,233,0.6)] leading-[1.6] italic">
             {content.bridge}
           </p>
         </div>
 
-        <div className="au d2 border-l-2 border-white/10 pl-5 flex flex-col gap-4">
+        <div className="au d2 border-l-2 border-[rgba(232,200,122,0.25)] pl-5 flex flex-col gap-4">
           <p className="font-heading text-[clamp(17px,3.5vw,22px)] font-normal leading-[1.5] italic text-[#f0efe9]">
             &ldquo;{content.quote}&rdquo;
           </p>
           <div className="flex flex-col gap-1">
-            <div className="text-[#ffd864] text-[13px] tracking-[3px]">★★★★★</div>
+            <div className="text-[#E8C87A] text-[13px] tracking-[3px]">★★★★★</div>
             <p className="text-[13px] font-semibold text-[#f0efe9] mt-0.5">{content.author}</p>
-            <p className="text-[11px] text-[rgba(240,239,233,0.4)]">{content.company}</p>
-            <p className="text-[10px] text-[rgba(240,239,233,0.24)] mt-px">{content.context}</p>
+            <p className="text-[11px] font-medium text-[rgba(240,239,233,0.7)]">{content.company}</p>
+            <p className="text-[10px] font-medium text-[rgba(240,239,233,0.6)] mt-px">{content.context}</p>
           </div>
         </div>
 
         <div className="au d3">
           <button
-            className="bg-[#f0efe9] text-[#0a0a0a] border-none px-7 py-[15px] font-body font-bold text-xs tracking-[0.07em] uppercase rounded-[9px] cursor-pointer hover:opacity-90 transition-opacity w-full"
+            className="bg-[#E8C87A] text-[#2A1800] border-none px-7 py-[15px] font-body font-bold text-xs tracking-[0.07em] uppercase rounded-[9px] cursor-pointer hover:opacity-90 transition-opacity w-full"
             onClick={onNext}
           >
-            Weiter →
+            {continueBtn}
           </button>
         </div>
       </div>
@@ -461,22 +318,23 @@ function TestimonialSlide({ content, qDone, qTotal, onNext }: TestimonialSlidePr
 // ─── TRUST SLIDE: STATS ───────────────────────────────────────────────────────
 
 interface StatsSlideProps {
-  content: TrustContent2;
+  content: TrustStats;
   qDone: number;
-  qTotal: number;
+  questionCount: number;
+  continueBtn: string;
   onNext: () => void;
 }
 
-function StatsSlide({ content, qDone, qTotal, onNext }: StatsSlideProps) {
+function StatsSlide({ content, qDone, questionCount, continueBtn, onNext }: StatsSlideProps) {
   return (
-    <div className={`${SCREEN_BASE} bg-[#0d0c0b]`}>
+    <div className={`${SCREEN} bg-[#0f0f0d]`}>
       <FunnelLogo />
-      <FunnelBar done={qDone} total={qTotal} />
+      <FunnelBar done={qDone} total={questionCount} />
 
       <div className={`${CARD} flex flex-col gap-6`}>
 
         <div className="au d1">
-          <p className="text-[13px] text-[rgba(240,239,233,0.42)] leading-[1.6] italic">
+          <p className="text-[13px] text-[rgba(240,239,233,0.6)] leading-[1.6] italic">
             {content.bridge}
           </p>
         </div>
@@ -485,7 +343,7 @@ function StatsSlide({ content, qDone, qTotal, onNext }: StatsSlideProps) {
           <h3 className="font-heading text-[clamp(20px,4vw,26px)] font-normal leading-[1.25] text-[#f0efe9]">
             {content.headline}
           </h3>
-          <p className="text-[13.5px] leading-[1.72] text-[rgba(240,239,233,0.5)]">
+          <p className="text-[13.5px] leading-[1.72] text-[rgba(240,239,233,0.65)]">
             {content.sub}
           </p>
         </div>
@@ -494,20 +352,20 @@ function StatsSlide({ content, qDone, qTotal, onNext }: StatsSlideProps) {
           {content.stats.map((stat) => (
             <div
               key={stat.label}
-              className="bg-white/[0.04] border border-white/[0.08] rounded-[10px] p-4 text-center"
+              className="bg-[rgba(232,200,122,0.05)] border border-[rgba(232,200,122,0.15)] rounded-[10px] p-4 text-center"
             >
-              <div className="font-heading text-[26px] text-[#f0efe9] leading-none">{stat.value}</div>
-              <div className="text-[11px] text-[rgba(240,239,233,0.38)] mt-1">{stat.label}</div>
+              <div className="font-heading text-[26px] text-[#E8C87A] leading-none">{stat.value}</div>
+              <div className="text-[11px] font-medium text-[rgba(240,239,233,0.7)] mt-1">{stat.label}</div>
             </div>
           ))}
         </div>
 
         <div className="au d4">
           <button
-            className="bg-[#f0efe9] text-[#0a0a0a] border-none px-7 py-[15px] font-body font-bold text-xs tracking-[0.07em] uppercase rounded-[9px] cursor-pointer hover:opacity-90 transition-opacity w-full"
+            className="bg-[#E8C87A] text-[#2A1800] border-none px-7 py-[15px] font-body font-bold text-xs tracking-[0.07em] uppercase rounded-[9px] cursor-pointer hover:opacity-90 transition-opacity w-full"
             onClick={onNext}
           >
-            Weiter →
+            {continueBtn}
           </button>
         </div>
       </div>
@@ -518,14 +376,17 @@ function StatsSlide({ content, qDone, qTotal, onNext }: StatsSlideProps) {
 // ─── LEAD CAPTURE ─────────────────────────────────────────────────────────────
 
 interface LeadCaptureProps {
-  onSubmit: (data: LeadData) => void;
+  dict: FunnelDict;
+  questionCount: number;
   showPrice: boolean;
+  onSubmit: (data: LeadData) => void;
 }
 
-function LeadCapture({ onSubmit, showPrice }: LeadCaptureProps) {
+function LeadCapture({ dict, questionCount, showPrice, onSubmit }: LeadCaptureProps) {
   const [formValues, setFormValues] = useState<LeadData>({ name: "", email: "", phone: "" });
   const [isLoading, setIsLoading] = useState(false);
   const countdown = useCountdown();
+  const { lead } = dict;
 
   const handleSubmit = async () => {
     if (!formValues.name.trim() || !formValues.email.trim()) return;
@@ -535,75 +396,67 @@ function LeadCapture({ onSubmit, showPrice }: LeadCaptureProps) {
   };
 
   return (
-    <div className={`${SCREEN_BASE} bg-[#0a0a0a]`}>
+    <div className={`${SCREEN} bg-[#0a0a0a]`}>
       <FunnelLogo />
-      <FunnelBar done={QUESTIONS.length} total={QUESTIONS.length} />
+      <FunnelBar done={questionCount} total={questionCount} />
 
       <div className={`${CARD} flex flex-col gap-7`}>
 
         <div className="au d1">
-          <span className="text-[10px] tracking-[0.15em] uppercase text-[rgba(240,239,233,0.3)]">
-            Letzter Schritt
+          <span className="text-[10px] font-medium tracking-[0.15em] uppercase text-[rgba(240,239,233,0.65)]">
+            {lead.stepLabel}
           </span>
         </div>
 
         <div className="au d2">
           <h2 className="font-heading text-[clamp(22px,4vw,32px)] font-normal leading-[1.2] text-[#f0efe9]">
-            Wir melden uns<br />
-            <em className="text-[rgba(240,239,233,0.4)]">persönlich bei dir.</em>
+            {lead.headline}<br />
+            <em className="text-[#E8C87A]">{lead.headlineAccent}</em>
           </h2>
         </div>
 
         <div className="au d2 flex flex-col gap-2.5">
-          {[
-            "Christian analysiert deine Antworten persönlich",
-            "Kostenloses 15-Min-Gespräch – ehrlich, kein Verkaufsdruck",
-            "Du bekommst eine konkrete Einschätzung deiner Situation",
-          ].map((item, index) => (
+          {lead.bullets.map((item, index) => (
             <div key={index} className="flex gap-2.5 items-start">
-              <div className="w-1.5 h-1.5 rounded-full bg-white/20 flex-shrink-0 mt-[7px]" />
-              <span className="text-[13px] text-[rgba(240,239,233,0.5)] leading-[1.55]">{item}</span>
+              <span className="text-[#E8C87A] text-[13px] flex-shrink-0 mt-px">✓</span>
+              <span className="text-[13px] text-[rgba(240,239,233,0.7)] leading-[1.55]">{item}</span>
             </div>
           ))}
         </div>
 
         {showPrice && (
-          <div className="au d3 bg-[rgba(255,220,100,0.06)] border border-[rgba(255,220,100,0.18)] rounded-[10px] px-[18px] py-3.5 flex gap-3 items-center">
+          <div className="au d3 bg-[rgba(232,200,122,0.07)] border border-[rgba(232,200,122,0.22)] rounded-[10px] px-[18px] py-3.5 flex gap-3 items-center">
             <span className="text-lg">⚡</span>
             <div>
-              <p className="text-[12.5px] text-[rgba(240,239,233,0.6)] leading-[1.6]">
-                Einführungsangebot: Website ab{" "}
-                <strong className="text-[#ffd864]">799 €</strong>{" "}
-                statt regulär{" "}
-                <span className="line-through opacity-45">2.500 €</span>
+              <p className="text-[12.5px] text-[rgba(240,239,233,0.7)] leading-[1.6]">
+                {lead.offer.prefix}{" "}
+                <strong className="text-[#E8C87A]">{lead.offer.price}</strong>{" "}
+                {lead.offer.originalLabel}{" "}
+                <span className="line-through opacity-50">{lead.offer.originalPrice}</span>
               </p>
               {countdown && (
-                <p className="text-[11px] text-[rgba(255,220,100,0.45)] mt-0.5">
-                  Endet in {countdown.h}:{countdown.m}:{countdown.s}
+                <p className="text-[11px] font-medium text-[rgba(232,200,122,0.6)] mt-0.5">
+                  {lead.offer.countdown} {countdown.h}:{countdown.m}:{countdown.s}
                 </p>
               )}
             </div>
           </div>
         )}
 
-        <div className="h-px bg-white/[0.07]" />
+        <div className="h-px bg-[rgba(232,200,122,0.12)]" />
 
         <div className="au d3 flex flex-col gap-[22px]">
-          {[
-            { label: "Dein Vorname *", type: "text", placeholder: "Max", key: "name" as const },
-            { label: "E-Mail *", type: "email", placeholder: "max@unternehmen.de", key: "email" as const },
-            { label: "Telefon (für schnellere Kontaktaufnahme)", type: "tel", placeholder: "+49 160 000 0000", key: "phone" as const },
-          ].map(({ label, type, placeholder, key }) => (
+          {(["name", "email", "phone"] as const).map((key) => (
             <div key={key}>
-              <label className="block text-[10px] tracking-[0.12em] uppercase text-[rgba(240,239,233,0.35)] mb-1">
-                {label}
+              <label className="block text-[10px] font-medium tracking-[0.12em] uppercase text-[rgba(240,239,233,0.7)] mb-1">
+                {lead.fields[key].label}
               </label>
               <input
-                type={type}
-                placeholder={placeholder}
+                type={key === "email" ? "email" : key === "phone" ? "tel" : "text"}
+                placeholder={lead.fields[key].placeholder}
                 value={formValues[key]}
-                onChange={(event) => setFormValues({ ...formValues, [key]: event.target.value })}
-                className="bg-transparent border-none border-b border-white/[0.16] text-[#f0efe9] font-body text-[15px] py-3 w-full outline-none transition-[border-color] duration-200 focus:border-b-white/60 placeholder:text-[rgba(255,255,255,0.22)] placeholder:text-[13px]"
+                onChange={(e) => setFormValues({ ...formValues, [key]: e.target.value })}
+                className="bg-transparent border-none border-b border-[rgba(232,200,122,0.2)] text-[#f0efe9] font-body text-[15px] py-3 w-full outline-none transition-[border-color] duration-200 focus:border-b-[rgba(232,200,122,0.6)] placeholder:text-[rgba(240,239,233,0.22)] placeholder:text-[13px]"
               />
             </div>
           ))}
@@ -611,14 +464,14 @@ function LeadCapture({ onSubmit, showPrice }: LeadCaptureProps) {
 
         <div className="au d4 flex flex-col gap-2">
           <button
-            className="bg-[#f0efe9] text-[#0a0a0a] border-none px-7 py-[15px] font-body font-bold text-xs tracking-[0.07em] uppercase rounded-[9px] cursor-pointer hover:opacity-90 transition-opacity w-full disabled:opacity-30 disabled:cursor-default"
+            className="bg-[#E8C87A] text-[#2A1800] border-none px-7 py-[15px] font-body font-bold text-xs tracking-[0.07em] uppercase rounded-[9px] cursor-pointer hover:opacity-90 transition-opacity w-full disabled:opacity-30 disabled:cursor-default"
             onClick={handleSubmit}
             disabled={!formValues.name.trim() || !formValues.email.trim() || isLoading}
           >
-            {isLoading ? "Wird übermittelt…" : "Jetzt Gespräch anfragen →"}
+            {isLoading ? lead.ctaLoading : lead.cta}
           </button>
-          <p className="text-[11px] text-[rgba(240,239,233,0.2)] text-center">
-            Keine Weitergabe an Dritte · DSGVO-konform
+          <p className="text-[11px] font-medium text-[rgba(240,239,233,0.7)] text-center">
+            {lead.security}
           </p>
         </div>
       </div>
@@ -629,68 +482,70 @@ function LeadCapture({ onSubmit, showPrice }: LeadCaptureProps) {
 // ─── THANK YOU ────────────────────────────────────────────────────────────────
 
 interface ThankYouProps {
-  result: ResultContent;
+  dict: FunnelDict;
+  questionCount: number;
+  result: FunnelResult;
   name: string;
 }
 
-function ThankYou({ result, name }: ThankYouProps) {
+function ThankYou({ dict, questionCount, result, name }: ThankYouProps) {
+  const { thanks } = dict;
+
   return (
-    <div className={`${SCREEN_BASE} bg-[#0a0a0a]`}>
+    <div className={`${SCREEN} bg-[#0a0a0a]`}>
       <FunnelLogo />
-      <FunnelBar done={QUESTIONS.length} total={QUESTIONS.length} />
+      <FunnelBar done={questionCount} total={questionCount} />
 
       <div className={`${CARD} flex flex-col gap-6 text-center items-center`}>
 
         <div className="au d1">
-          <div className="w-[46px] h-[46px] rounded-full border border-white/[0.16] flex items-center justify-center text-[17px] text-[rgba(240,239,233,0.6)]">
+          <div className="w-[46px] h-[46px] rounded-full border border-[rgba(232,200,122,0.3)] flex items-center justify-center text-[17px] text-[#E8C87A]">
             ✓
           </div>
         </div>
 
         <div className="au d2 flex flex-col gap-2.5">
-          <span className="text-[10px] tracking-[0.15em] uppercase text-[rgba(240,239,233,0.3)]">
+          <span className="text-[10px] font-medium tracking-[0.15em] uppercase text-[#E8C87A]">
             {result.tag}
           </span>
           <h2 className="font-heading text-[clamp(20px,4vw,30px)] font-normal leading-[1.2] text-[#f0efe9]">
-            {name ? `Danke, ${name}.` : "Danke."}<br />
-            <em className="text-[rgba(240,239,233,0.42)]">Wir melden uns bald.</em>
+            {name ? `${thanks.greeting}, ${name}.` : `${thanks.greeting}.`}<br />
+            <em className="text-[#E8C87A]">{thanks.headlineAccent}</em>
           </h2>
         </div>
 
         <div className="au d3">
-          <p className="text-[14.5px] leading-[1.75] text-[rgba(240,239,233,0.52)] max-w-[400px]">
-            {result.b}
+          <p className="text-[14.5px] leading-[1.75] text-[rgba(240,239,233,0.7)] max-w-[400px]">
+            {result.body}
           </p>
         </div>
 
-        <div className="au d3 bg-white/[0.04] border border-white/[0.08] rounded-[12px] p-[20px_22px] w-full text-left">
-          <p className="text-[10px] tracking-[0.12em] uppercase text-[rgba(240,239,233,0.28)] mb-3.5">
-            Was passiert jetzt
+        <div className="au d3 bg-[rgba(232,200,122,0.04)] border border-[rgba(232,200,122,0.12)] rounded-[12px] p-[20px_22px] w-full text-left">
+          <p className="text-[10px] font-medium tracking-[0.12em] uppercase text-[rgba(240,239,233,0.65)] mb-3.5">
+            {thanks.nextStepsLabel}
           </p>
-          {[
-            "Christian analysiert deine Antworten persönlich",
-            "Du bekommst eine E-Mail oder einen Anruf – innerhalb von 24h",
-            "Kostenloses 15-Min-Gespräch: konkrete Einschätzung, keine Floskeln",
-          ].map((step, index) => (
+          {([
+            { icon: "👤", text: thanks.nextSteps[0] },
+            { icon: "✉️", text: thanks.nextSteps[1] },
+            { icon: "💬", text: thanks.nextSteps[2] },
+          ] as const).map(({ icon, text }, index) => (
             <div key={index} className={`flex gap-3 items-start${index < 2 ? " mb-2.5" : ""}`}>
-              <span className="text-[11px] text-[rgba(240,239,233,0.3)] mt-px flex-shrink-0">
-                0{index + 1}
-              </span>
-              <span className="text-[13px] text-[rgba(240,239,233,0.52)] leading-[1.55]">{step}</span>
+              <span className="text-[13px] flex-shrink-0 mt-px">{icon}</span>
+              <span className="text-[13px] text-[rgba(240,239,233,0.7)] leading-[1.55]">{text}</span>
             </div>
           ))}
         </div>
 
         <div className="au d4">
-          <p className="text-[11px] text-[rgba(240,239,233,0.2)]">
-            Schon neugierig?{" "}
+          <p className="text-[11px] font-medium text-[rgba(240,239,233,0.65)]">
+            {thanks.curious}{" "}
             <a
               href="https://kasoria.com"
               target="_blank"
               rel="noreferrer"
-              className="text-[rgba(240,239,233,0.45)] underline"
+              className="text-[#E8C87A] underline underline-offset-2"
             >
-              kasoria.com
+              kasoria.com →
             </a>
           </p>
         </div>
@@ -703,30 +558,31 @@ function ThankYou({ result, name }: ThankYouProps) {
 
 type Phase = "landing" | "quiz" | "lead" | "thanks";
 
-interface WebsiteCheckFunnelProps {
+export interface WebsiteCheckFunnelProps {
+  dict: FunnelDict;
   variant?: "a" | "b";
 }
 
-export function WebsiteCheckFunnel({ variant = "a" }: WebsiteCheckFunnelProps) {
+export function WebsiteCheckFunnel({ dict, variant = "a" }: WebsiteCheckFunnelProps) {
   const showPrice = variant !== "b";
-  const [phase, setPhase] = useState<Phase>("landing");
+  const slides = buildSlides(dict);
+  const questionCount = slides.filter((s) => s.type === "q").length;
+
+  const [phase, setPhase]         = useState<Phase>("landing");
   const [slideIndex, setSlideIndex] = useState(0);
-  const [qDone, setQDone] = useState(0);
-  const [answers, setAnswers] = useState<Answers>({});
-  const [leadName, setLeadName] = useState("");
+  const [qDone, setQDone]           = useState(0);
+  const [answers, setAnswers]       = useState<Answers>({});
+  const [leadName, setLeadName]     = useState("");
 
   const advance = () => {
-    const nextIndex = slideIndex + 1;
-    if (nextIndex >= SLIDES.length) {
-      setPhase("lead");
-    } else {
-      setSlideIndex(nextIndex);
-    }
+    const next = slideIndex + 1;
+    if (next >= slides.length) setPhase("lead");
+    else setSlideIndex(next);
   };
 
-  const handleAnswer = (value: string) => {
-    const currentSlide = SLIDES[slideIndex] as QuestionSlideData;
-    setAnswers((prev) => ({ ...prev, [currentSlide.qKey]: value }));
+  const handleAnswer = (selectedIndex: number) => {
+    const currentSlide = slides[slideIndex] as QuestionSlideData;
+    setAnswers((prev) => ({ ...prev, [currentSlide.qKey]: selectedIndex }));
     setQDone((n) => n + 1);
     advance();
   };
@@ -740,17 +596,17 @@ export function WebsiteCheckFunnel({ variant = "a" }: WebsiteCheckFunnelProps) {
         body: JSON.stringify({ ...data, answers, variant, funnel: "website-check" }),
       });
     } catch {
-      // Silent fail — lead is shown thank-you regardless
+      // Silent fail — lead sees thank-you regardless
     }
     setPhase("thanks");
   };
 
   if (phase === "landing") {
-    return <Landing onStart={() => setPhase("quiz")} />;
+    return <Landing dict={dict} onStart={() => setPhase("quiz")} />;
   }
 
   if (phase === "quiz") {
-    const currentSlide = SLIDES[slideIndex];
+    const currentSlide = slides[slideIndex];
 
     if (currentSlide.type === "q") {
       return (
@@ -758,7 +614,8 @@ export function WebsiteCheckFunnel({ variant = "a" }: WebsiteCheckFunnelProps) {
           key={slideIndex}
           slide={currentSlide}
           qDone={qDone}
-          qTotal={QUESTIONS.length}
+          questionCount={questionCount}
+          dict={dict}
           onAnswer={handleAnswer}
         />
       );
@@ -768,9 +625,10 @@ export function WebsiteCheckFunnel({ variant = "a" }: WebsiteCheckFunnelProps) {
       return (
         <TestimonialSlide
           key={slideIndex}
-          content={getTrust1(answers)}
+          content={resolveTrust1(answers, dict)}
           qDone={qDone}
-          qTotal={QUESTIONS.length}
+          questionCount={questionCount}
+          continueBtn={dict.quiz.continueBtn}
           onNext={advance}
         />
       );
@@ -780,9 +638,10 @@ export function WebsiteCheckFunnel({ variant = "a" }: WebsiteCheckFunnelProps) {
       return (
         <StatsSlide
           key={slideIndex}
-          content={getTrust2(answers)}
+          content={resolveTrust2(answers, dict)}
           qDone={qDone}
-          qTotal={QUESTIONS.length}
+          questionCount={questionCount}
+          continueBtn={dict.quiz.continueBtn}
           onNext={advance}
         />
       );
@@ -790,8 +649,22 @@ export function WebsiteCheckFunnel({ variant = "a" }: WebsiteCheckFunnelProps) {
   }
 
   if (phase === "lead") {
-    return <LeadCapture onSubmit={handleLead} showPrice={showPrice} />;
+    return (
+      <LeadCapture
+        dict={dict}
+        questionCount={questionCount}
+        showPrice={showPrice}
+        onSubmit={handleLead}
+      />
+    );
   }
 
-  return <ThankYou result={getResult(answers)} name={leadName} />;
+  return (
+    <ThankYou
+      dict={dict}
+      questionCount={questionCount}
+      result={resolveResult(answers, dict)}
+      name={leadName}
+    />
+  );
 }

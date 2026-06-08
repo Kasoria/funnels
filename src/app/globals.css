@@ -34,15 +34,15 @@ html {
   --color-accent-800: #5C4A30;
   --color-accent-900: #2A1800;
 
-  /* Funnel dark palette */
+  /* Funnel dark palette — Kasoria voltage: near-black + gold */
   --color-canvas: #0a0a0a;
-  --color-canvas-warm: #0d0c0b;
-  --color-surface: rgba(255,255,255,0.04);
-  --color-border: rgba(255,255,255,0.1);
+  --color-canvas-warm: #0f0f0d;
+  --color-surface: rgba(232,200,122,0.04);
+  --color-border: rgba(232,200,122,0.12);
   --color-text-primary: #f0efe9;
   --color-text-muted: rgba(240,239,233,0.5);
   --color-text-faint: rgba(240,239,233,0.28);
-  --color-gold: #ffd864;
+  --color-gold: #E8C87A;
 
   --font-family-body: var(--font-sora), ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-family-heading: var(--font-dm-serif), ui-serif, Georgia, serif;

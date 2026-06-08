@@ -19,14 +19,22 @@ src/
     globals.css             # Tailwind v4 @theme + global animations
     page.tsx                # Redirects to /website-check
     website-check/
-      page.tsx              # Website-check quiz funnel (A/B via ?v=a|b)
+      page.tsx              # German funnel (A/B via ?v=a|b)
+    en/
+      page.tsx              # Redirects to /en/website-check
+      website-check/
+        page.tsx            # English funnel (A/B via ?v=a|b)
     api/
       leads/route.ts        # POST /api/leads — stores/emails lead data
   components/
     funnel/
-      WebsiteCheckFunnel.tsx  # Full quiz funnel client component
+      WebsiteCheckFunnel.tsx  # Full quiz funnel client component (dict prop)
       FunnelBar.tsx           # Top progress bar
       FunnelLogo.tsx          # KASORIA wordmark
+  locales/
+    types.ts                # FunnelDict interface
+    de.ts                   # German strings + € prices
+    en.ts                   # English strings + $ prices
 ```
 
 ## Funnel pattern
@@ -45,7 +53,7 @@ Pass A/B variant via `?v=b` in the URL — default is `"a"`.
 
 Same brand palette as kasoria_website but with a dark funnel aesthetic.
 
-- **Canvas dark**: `#0a0a0a` / warm variant `#0d0c0b`
+- **Canvas dark**: `#0a0a0a` (near-black, voltage dark) / warm variant `#0f0f0d` (trust slides)
 - **Text primary**: `#f0efe9`
 - **Text muted**: `rgba(240,239,233,0.5)`
 - **Accent gold**: `#ffd864` / `#E8C87A`
