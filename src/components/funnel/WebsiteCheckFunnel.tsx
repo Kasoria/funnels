@@ -291,7 +291,7 @@ function TestimonialSlide({ content, qDone, questionCount, continueBtn, onNext }
         </div>
 
         <div className="au d2 border-l-2 border-[rgba(232,200,122,0.25)] pl-5 flex flex-col gap-4">
-          <p className="font-heading text-[clamp(17px,3.5vw,22px)] font-normal leading-[1.5] italic text-[#f0efe9]">
+          <p className="font-body text-[clamp(17px,3.5vw,22px)] leading-[1.5] italic text-[#f0efe9]">
             &ldquo;{content.quote}&rdquo;
           </p>
           <div className="flex flex-col gap-1">

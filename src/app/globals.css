@@ -44,8 +44,8 @@ html {
   --color-text-faint: rgba(240,239,233,0.28);
   --color-gold: #E8C87A;
 
-  --font-family-body: var(--font-sora), ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-family-heading: var(--font-dm-serif), ui-serif, Georgia, serif;
+  --font-family-body: var(--font-archivo), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-family-heading: var(--font-anton), ui-sans-serif, system-ui, -apple-system, sans-serif;
 
   --radius-4xl: 1.875rem;
 }

@@ -1,19 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Serif_Display, Sora } from "next/font/google";
+import { Anton, Archivo } from "next/font/google";
 import "./globals.css";
 
-const sora = Sora({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-sora",
-});
-
-const dmSerif = DM_Serif_Display({
+const anton = Anton({
   subsets: ["latin"],
   weight: "400",
-  style: ["normal", "italic"],
   display: "swap",
-  variable: "--font-dm-serif",
+  variable: "--font-anton",
+});
+
+const archivo = Archivo({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-archivo",
 });
 
 export const metadata: Metadata = {
@@ -36,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="de" className={`${sora.variable} ${dmSerif.variable}`}>
+    <html lang="de" className={`${anton.variable} ${archivo.variable}`}>
       <body className="antialiased font-body">
         {children}
       </body>
