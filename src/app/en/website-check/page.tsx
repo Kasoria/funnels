@@ -13,7 +13,7 @@ interface PageProps {
 
 export default async function EnWebsiteCheckPage({ searchParams }: PageProps) {
   const { v } = await searchParams;
-  const variant = v === "b" ? "b" : "a";
+  const variant = v === "a" ? "a" : v === "b" ? "b" : undefined;
 
-  return <WebsiteCheckFunnel dict={en} variant={variant} />;
+  return <WebsiteCheckFunnel dict={en} variant={variant} lang="en" />;
 }

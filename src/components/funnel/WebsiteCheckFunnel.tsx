@@ -379,7 +379,7 @@ interface LeadCaptureProps {
   dict: FunnelDict;
   questionCount: number;
   showPrice: boolean;
-  onSubmit: (data: LeadData) => void;
+  onSubmit: (data: LeadData) => Promise<void>;
 }
 
 function LeadCapture({ dict, questionCount, showPrice, onSubmit }: LeadCaptureProps) {
@@ -391,8 +391,7 @@ function LeadCapture({ dict, questionCount, showPrice, onSubmit }: LeadCapturePr
   const handleSubmit = async () => {
     if (!formValues.name.trim() || !formValues.email.trim()) return;
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 900));
-    onSubmit(formValues);
+    await onSubmit(formValues);
   };
 
   return (
@@ -464,10 +463,16 @@ function LeadCapture({ dict, questionCount, showPrice, onSubmit }: LeadCapturePr
 
         <div className="au d4 flex flex-col gap-2">
           <button
-            className="bg-[#E8C87A] text-[#2A1800] border-none px-7 py-[15px] font-body font-bold text-xs tracking-[0.07em] uppercase rounded-[9px] cursor-pointer hover:opacity-90 transition-opacity w-full disabled:opacity-30 disabled:cursor-default"
+            className="bg-[#E8C87A] text-[#2A1800] border-none px-7 py-[15px] font-body font-bold text-xs tracking-[0.07em] uppercase rounded-[9px] cursor-pointer hover:opacity-90 transition-opacity w-full disabled:opacity-30 disabled:cursor-default flex items-center justify-center gap-2"
             onClick={handleSubmit}
             disabled={!formValues.name.trim() || !formValues.email.trim() || isLoading}
           >
+            {isLoading && (
+              <svg className="animate-spin h-4 w-4 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            )}
             {isLoading ? lead.ctaLoading : lead.cta}
           </button>
           <p className="text-[11px] font-medium text-[rgba(240,239,233,0.7)] text-center">
@@ -561,9 +566,20 @@ type Phase = "landing" | "quiz" | "lead" | "thanks";
 export interface WebsiteCheckFunnelProps {
   dict: FunnelDict;
   variant?: "a" | "b";
+  lang?: "de" | "en";
 }
 
-export function WebsiteCheckFunnel({ dict, variant = "a" }: WebsiteCheckFunnelProps) {
+export function WebsiteCheckFunnel({ dict, variant: variantProp, lang = "de" }: WebsiteCheckFunnelProps) {
+  const [variant] = useState<"a" | "b">(() => variantProp ?? (Math.random() < 0.5 ? "a" : "b"));
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("v") !== variant) {
+      url.searchParams.set("v", variant);
+      history.replaceState(null, "", url.toString());
+    }
+  }, [variant]);
+
   const showPrice = variant !== "b";
   const slides = buildSlides(dict);
   const questionCount = slides.filter((s) => s.type === "q").length;
@@ -587,13 +603,17 @@ export function WebsiteCheckFunnel({ dict, variant = "a" }: WebsiteCheckFunnelPr
     advance();
   };
 
-  const handleLead = async (data: LeadData) => {
+  const handleLead = async (data: LeadData): Promise<void> => {
     setLeadName(data.name);
+    const resolvedAnswers = dict.quiz.questions.map((question, index) => ({
+      q: question.q,
+      a: answers[index] !== undefined ? question.opts[answers[index]] : "–",
+    }));
     try {
       await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, answers, variant, funnel: "website-check" }),
+        body: JSON.stringify({ ...data, answers, resolvedAnswers, variant, funnel: "website-check", lang }),
       });
     } catch {
       // Silent fail — lead sees thank-you regardless
