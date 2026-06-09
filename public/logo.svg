@@ -1,0 +1,98 @@
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 318.82">
+  <defs>
+
+    <!-- ── DROP SHADOW FILTER ─────────────────────────────────── -->
+    <filter id="k-shadow" x="-15%" y="-10%" width="135%" height="135%">
+      <!-- Outer soft shadow -->
+      <feDropShadow dx="3" dy="6" stdDeviation="7" flood-color="#2a1800" flood-opacity="0.55"/>
+    </filter>
+
+    <!-- ── INNER BEVEL FILTER (subtle emboss depth) ─────────── -->
+    <filter id="k-bevel" x="-5%" y="-5%" width="115%" height="120%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
+      <feOffset dx="-2" dy="-3" result="offsetBlur"/>
+      <feFlood flood-color="#f0d080" flood-opacity="0.35" result="highlight"/>
+      <feComposite in="highlight" in2="offsetBlur" operator="in" result="highlightComp"/>
+      <feMerge>
+        <feMergeNode in="SourceGraphic"/>
+        <feMergeNode in="highlightComp"/>
+      </feMerge>
+    </filter>
+
+    <!-- ── GRADIENT: LEFT VERTICAL BAR of K ─────────────────── -->
+    <!--  Light hits from top-left, shadow falls bottom-right    -->
+    <linearGradient id="grad-bar" x1="0%" y1="0%" x2="60%" y2="100%">
+      <stop offset="0%"   stop-color="#e8c87a"/>  <!-- bright highlight top -->
+      <stop offset="28%"  stop-color="#c8a96e"/>  <!-- mid gold             -->
+      <stop offset="65%"  stop-color="#a8823f"/>  <!-- darkening            -->
+      <stop offset="100%" stop-color="#6e5020"/>  <!-- deep shadow bottom   -->
+    </linearGradient>
+
+    <!-- ── GRADIENT: DIAGONAL ARMS of K ─────────────────────── -->
+    <!--  Upper arm: lit from top, lower arm: falls into shadow  -->
+    <linearGradient id="grad-arms" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%"   stop-color="#dbbf72"/>  <!-- top-left lit        -->
+      <stop offset="35%"  stop-color="#c8a96e"/>  <!-- mid gold            -->
+      <stop offset="70%"  stop-color="#9a7635"/>  <!-- lower shadow        -->
+      <stop offset="100%" stop-color="#5c3e10"/>  <!-- deep bottom-right   -->
+    </linearGradient>
+
+    <!-- ── EDGE HIGHLIGHT (thin bright rim top-left) ─────────── -->
+    <linearGradient id="grad-rim" x1="0%" y1="0%" x2="40%" y2="60%">
+      <stop offset="0%"   stop-color="#f5e0a0" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#c8a96e" stop-opacity="0"/>
+    </linearGradient>
+
+  </defs>
+
+  <!-- ─────────────────────────────────────────────────── -->
+  <!-- K – LEFT VERTICAL BAR                              -->
+  <!-- ─────────────────────────────────────────────────── -->
+  <g>
+
+    <!-- Base gold fill with gradient -->
+    <path
+      fill="url(#grad-bar)"
+      d="M94,40.8c0,39-1.44,144.15.34,183.21,1.47,32.51,26.31,53.87,59.27,54.09,0-41.32,2-148.68-.56-189.85-1.83-30-28.92-49.74-59-47.45"
+    />
+
+    <!-- Rim highlight overlay on bar -->
+    <path
+      fill="url(#grad-rim)"
+      opacity="0.6"
+      d="M94,40.8c0,39-1.44,144.15.34,183.21,1.47,32.51,26.31,53.87,59.27,54.09,0-41.32,2-148.68-.56-189.85-1.83-30-28.92-49.74-59-47.45"
+    />
+
+  </g>
+
+  <!-- ─────────────────────────────────────────────────── -->
+  <!-- K – DIAGONAL ARMS                                  -->
+  <!-- ─────────────────────────────────────────────────── -->
+  <g>
+
+    <!-- Base gold fill with gradient -->
+    <path
+      fill="url(#grad-arms)"
+      d="M273.47,278.32c21.81-20.92,25.19-54.25,4-75.65-14.86-15-30.56-29.25-46.48-43.24,2.95-2.58,5.89-5.16,8.82-7.77,12.91-11.5,25.6-23.23,37.73-35.51a50.79,50.79,0,0,0,4.31-4.94c16.25-21.33,11.85-51.34-8.33-70.71-11.15,10-22.45,19.79-33.72,29.67C224.58,83.53,209.38,97,194.7,111q-4.19,4-8.31,8c-.25.24-.48.49-.72.73l-.14-.12c-.77.87-1.5,1.76-2.22,2.65-9.2,10.36-13.85,22.46-14.17,34.81-.91,14.69,4.22,29.31,15.77,41.35.24.28.46.56.7.83l.06,0c.21.22.42.44.64.65,27.91,27.38,58.06,52.48,87.16,78.49"
+    />
+
+    <!-- Rim highlight overlay on arms -->
+    <path
+      fill="url(#grad-rim)"
+      opacity="0.5"
+      d="M273.47,278.32c21.81-20.92,25.19-54.25,4-75.65-14.86-15-30.56-29.25-46.48-43.24,2.95-2.58,5.89-5.16,8.82-7.77,12.91-11.5,25.6-23.23,37.73-35.51a50.79,50.79,0,0,0,4.31-4.94c16.25-21.33,11.85-51.34-8.33-70.71-11.15,10-22.45,19.79-33.72,29.67C224.58,83.53,209.38,97,194.7,111q-4.19,4-8.31,8c-.25.24-.48.49-.72.73l-.14-.12c-.77.87-1.5,1.76-2.22,2.65-9.2,10.36-13.85,22.46-14.17,34.81-.91,14.69,4.22,29.31,15.77,41.35.24.28.46.56.7.83l.06,0c.21.22.42.44.64.65,27.91,27.38,58.06,52.48,87.16,78.49"
+    />
+
+  </g>
+
+  <!-- ─────────────────────────────────────────────────── -->
+  <!-- ASORIA – text paths, WHITE for dark backgrounds    -->
+  <!-- ─────────────────────────────────────────────────── -->
+  <path fill="#f5f2ec" d="M382.59,202.11H324.83l-8.33,18.55H295.76L353.14,96.12h1.14l57.38,124.54H390.92Zm-7.42-16.43L353.75,138l-21.5,47.69Z"/>
+  <path fill="#f5f2ec" d="M414.39,199.23l15.14-10.82c5.45,9.54,15.6,15,27.33,15,13.71,0,24.08-6.59,24.08-15.9,0-11.28-16.05-18.1-30.28-24.23-14.31-6.36-30.21-13.78-30.21-32.93,0-20,17.34-33.92,39.29-33.92,17.41,0,30.44,8.4,35.43,21.81l-14.23,9.84c-3.79-8.26-12.19-12.87-21.05-12.87-11.2,0-20.14,7-20.14,15.59,0,9.54,11.29,13,26.12,19.31,19.31,8.48,34.3,17.79,34.3,37,0,21.65-18.78,35.58-43.53,35.58-20.07,0-35.28-9.39-42.25-23.47"/>
+  <path fill="#f5f2ec" d="M510.77,159.79a63.1,63.1,0,1,1,126.2,0c0,34.52-28.46,62.84-63.21,62.84a63.1,63.1,0,0,1-63-62.84m106.82-.15a43.76,43.76,0,1,0-43.83,43.6,44,44,0,0,0,43.83-43.6"/>
+  <path fill="#f5f2ec" d="M721.62,220.66l-32.86-47.24h-15v47.24H654.62l-.08-122h37.93c22.71,0,41.34,17.49,41.34,39.21,0,15.75-10.15,29.45-24.15,34l35.5,48.83Zm-28.7-63.14c11.51.07,21.13-9.24,21.13-20.14,0-11.36-9.77-19.76-21.13-19.76H673.69v39.9Z"/>
+  <rect fill="#f5f2ec" x="758.04" y="98.62" width="19.15" height="122.04"/>
+  <path fill="#f5f2ec" d="M877.5,202.11H819.74l-8.33,18.55H790.66L848.05,96.12h1.14l57.38,124.54H885.83Zm-7.42-16.43L848.66,138l-21.5,47.69Z"/>
+
+</svg>

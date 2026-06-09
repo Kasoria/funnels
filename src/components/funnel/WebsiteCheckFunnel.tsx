@@ -167,7 +167,7 @@ function Landing({ dict, lang, onStart }: { dict: FunnelDict; lang: "de" | "en";
       <div className={`${CARD} flex flex-col gap-7 text-center items-center`}>
 
         <div className="au d1">
-          <span className="text-[10px] font-medium tracking-[0.16em] uppercase text-[rgba(240,239,233,0.65)]">
+          <span className="text-[10px] font-medium tracking-[0.16em] uppercase text-[rgba(240,239,233,0.85)]">
             {landing.eyebrow}
           </span>
         </div>
@@ -180,7 +180,7 @@ function Landing({ dict, lang, onStart }: { dict: FunnelDict; lang: "de" | "en";
         </div>
 
         <div className="au d3">
-          <p className="text-[14.5px] leading-[1.78] text-[rgba(240,239,233,0.65)] max-w-[380px]">
+          <p className="text-[14.5px] leading-[1.78] text-[rgba(240,239,233,0.85)] max-w-[380px]">
             {landing.subtext}
           </p>
         </div>
@@ -191,7 +191,7 @@ function Landing({ dict, lang, onStart }: { dict: FunnelDict; lang: "de" | "en";
               <div className="w-6 h-6 rounded-full flex-shrink-0 border border-[rgba(232,200,122,0.35)] flex items-center justify-center text-[10px] font-bold text-[#E8C87A] mt-px">
                 {icon}
               </div>
-              <span className="text-[13px] text-[rgba(240,239,233,0.7)] leading-[1.5]">{landing.steps[index]}</span>
+              <span className="text-[13px] text-[rgba(240,239,233,0.88)] leading-[1.5]">{landing.steps[index]}</span>
             </div>
           ))}
         </div>
@@ -209,10 +209,10 @@ function Landing({ dict, lang, onStart }: { dict: FunnelDict; lang: "de" | "en";
                 <Fragment key={label}>
                   <div className="bg-[rgba(232,200,122,0.06)] border border-[rgba(232,200,122,0.2)] rounded-[7px] px-3 py-2 min-w-[52px] text-center">
                     <div className="text-[22px] font-bold text-[#f0efe9] leading-none">{val}</div>
-                    <div className="text-[9px] font-medium tracking-[0.1em] uppercase text-[rgba(240,239,233,0.65)] mt-0.5">{label}</div>
+                    <div className="text-[9px] font-medium tracking-[0.1em] uppercase text-[rgba(240,239,233,0.85)] mt-0.5">{label}</div>
                   </div>
                   {idx < 1 && (
-                    <span className="text-[20px] text-[rgba(240,239,233,0.4)] mb-2">:</span>
+                    <span className="text-[20px] text-[rgba(240,239,233,0.65)] mb-2">:</span>
                   )}
                 </Fragment>
               ))}
@@ -227,15 +227,15 @@ function Landing({ dict, lang, onStart }: { dict: FunnelDict; lang: "de" | "en";
           >
             {landing.cta}
           </button>
-          <p className="text-[11px] font-medium text-[rgba(240,239,233,0.7)] text-center">{landing.security}</p>
+          <p className="text-[11px] font-medium text-[rgba(240,239,233,0.88)] text-center">{landing.security}</p>
         </div>
       </div>
 
       <div className="absolute bottom-5 flex flex-col items-center gap-1.5">
-        <span className="text-[10px] font-medium text-[rgba(240,239,233,0.55)]">{landing.footer}</span>
-        <div className="flex gap-3 text-[10px] text-[rgba(240,239,233,0.35)]">
-          <a href={lang === "en" ? "/en/impressum" : "/impressum"} className="hover:text-[rgba(240,239,233,0.6)] transition-colors">{lang === "en" ? "Legal Notice" : "Impressum"}</a>
-          <a href={lang === "en" ? "/en/datenschutz" : "/datenschutz"} className="hover:text-[rgba(240,239,233,0.6)] transition-colors">{lang === "en" ? "Privacy Policy" : "Datenschutz"}</a>
+        <span className="text-[10px] font-medium text-[rgba(240,239,233,0.72)]">{landing.footer}</span>
+        <div className="flex gap-3 text-[10px] text-[rgba(240,239,233,0.58)]">
+          <a href={lang === "en" ? "/en/impressum" : "/impressum"} className="hover:text-[rgba(240,239,233,0.95)] transition-colors">{lang === "en" ? "Legal Notice" : "Impressum"}</a>
+          <a href={lang === "en" ? "/en/datenschutz" : "/datenschutz"} className="hover:text-[rgba(240,239,233,0.95)] transition-colors">{lang === "en" ? "Privacy Policy" : "Datenschutz"}</a>
         </div>
       </div>
     </div>
@@ -264,7 +264,7 @@ function QuestionSlide({ slide, qDone, questionCount, dict, onAnswer }: Question
       <div className={`${CARD} flex flex-col gap-6`}>
 
         <div className="au d1 flex justify-between">
-          <span className="text-[10px] font-medium tracking-[0.12em] uppercase text-[rgba(240,239,233,0.65)]">
+          <span className="text-[10px] font-medium tracking-[0.12em] uppercase text-[rgba(240,239,233,0.85)]">
             {dict.quiz.progressLabel} {qDone + 1} / {questionCount}
           </span>
           <span className="text-[10px] text-[#E8C87A] font-semibold">
@@ -292,7 +292,7 @@ function QuestionSlide({ slide, qDone, questionCount, dict, onAnswer }: Question
               <span className={`w-[22px] h-[22px] rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold border ${
                 selected === index
                   ? "border-[rgba(42,24,0,0.5)] text-[rgba(42,24,0,0.6)]"
-                  : "border-[rgba(232,200,122,0.4)] text-[rgba(232,200,122,0.65)]"
+                  : "border-[rgba(232,200,122,0.55)] text-[rgba(232,200,122,0.9)]"
               }`}>
                 {String.fromCharCode(65 + index)}
               </span>
@@ -336,7 +336,7 @@ function TestimonialSlide({ content, qDone, questionCount, continueBtn, cd, onNe
       <div className={`${CARD} flex flex-col gap-7`}>
 
         <div className="au d1">
-          <p className="text-[13px] text-[rgba(240,239,233,0.6)] leading-[1.6] italic">
+          <p className="text-[13px] text-[rgba(240,239,233,0.82)] leading-[1.6] italic">
             {content.bridge}
           </p>
         </div>
@@ -348,8 +348,8 @@ function TestimonialSlide({ content, qDone, questionCount, continueBtn, cd, onNe
           <div className="flex flex-col gap-1">
             <div className="text-[#E8C87A] text-[13px] tracking-[3px]">★★★★★</div>
             <p className="text-[13px] font-semibold text-[#f0efe9] mt-0.5">{content.author}</p>
-            <p className="text-[11px] font-medium text-[rgba(240,239,233,0.7)]">{content.company}</p>
-            <p className="text-[10px] font-medium text-[rgba(240,239,233,0.6)] mt-px">{content.context}</p>
+            <p className="text-[11px] font-medium text-[rgba(240,239,233,0.88)]">{content.company}</p>
+            <p className="text-[10px] font-medium text-[rgba(240,239,233,0.82)] mt-px">{content.context}</p>
           </div>
         </div>
 
@@ -387,7 +387,7 @@ function StatsSlide({ content, qDone, questionCount, continueBtn, cd, onNext }: 
       <div className={`${CARD} flex flex-col gap-6`}>
 
         <div className="au d1">
-          <p className="text-[13px] text-[rgba(240,239,233,0.6)] leading-[1.6] italic">
+          <p className="text-[13px] text-[rgba(240,239,233,0.82)] leading-[1.6] italic">
             {content.bridge}
           </p>
         </div>
@@ -396,7 +396,7 @@ function StatsSlide({ content, qDone, questionCount, continueBtn, cd, onNext }: 
           <h3 className="font-heading text-[clamp(20px,4vw,26px)] font-normal leading-[1.25] text-[#f0efe9]">
             {content.headline}
           </h3>
-          <p className="text-[13.5px] leading-[1.72] text-[rgba(240,239,233,0.65)]">
+          <p className="text-[13.5px] leading-[1.72] text-[rgba(240,239,233,0.85)]">
             {content.sub}
           </p>
         </div>
@@ -408,7 +408,7 @@ function StatsSlide({ content, qDone, questionCount, continueBtn, cd, onNext }: 
               className="bg-[rgba(232,200,122,0.05)] border border-[rgba(232,200,122,0.15)] rounded-[10px] p-4 text-center"
             >
               <div className="font-heading text-[26px] text-[#E8C87A] leading-none">{stat.value}</div>
-              <div className="text-[11px] font-medium text-[rgba(240,239,233,0.7)] mt-1">{stat.label}</div>
+              <div className="text-[11px] font-medium text-[rgba(240,239,233,0.88)] mt-1">{stat.label}</div>
             </div>
           ))}
         </div>
@@ -456,7 +456,7 @@ function LeadCapture({ dict, questionCount, showPrice, onSubmit }: LeadCapturePr
       <div className={`${CARD} flex flex-col gap-7`}>
 
         <div className="au d1">
-          <span className="text-[10px] font-medium tracking-[0.15em] uppercase text-[rgba(240,239,233,0.65)]">
+          <span className="text-[10px] font-medium tracking-[0.15em] uppercase text-[rgba(240,239,233,0.85)]">
             {lead.stepLabel}
           </span>
         </div>
@@ -472,7 +472,7 @@ function LeadCapture({ dict, questionCount, showPrice, onSubmit }: LeadCapturePr
           {lead.bullets.map((item, index) => (
             <div key={index} className="flex gap-2.5 items-start">
               <span className="text-[#E8C87A] text-[13px] flex-shrink-0 mt-px">✓</span>
-              <span className="text-[13px] text-[rgba(240,239,233,0.7)] leading-[1.55]">{item}</span>
+              <span className="text-[13px] text-[rgba(240,239,233,0.88)] leading-[1.55]">{item}</span>
             </div>
           ))}
         </div>
@@ -481,14 +481,14 @@ function LeadCapture({ dict, questionCount, showPrice, onSubmit }: LeadCapturePr
           <div className="au d3 bg-[rgba(232,200,122,0.07)] border border-[rgba(232,200,122,0.22)] rounded-[10px] px-[18px] py-3.5 flex gap-3 items-center">
             <span className="text-lg">⚡</span>
             <div>
-              <p className="text-[12.5px] text-[rgba(240,239,233,0.7)] leading-[1.6]">
+              <p className="text-[12.5px] text-[rgba(240,239,233,0.88)] leading-[1.6]">
                 {lead.offer.prefix}{" "}
                 <strong className="text-[#E8C87A]">{lead.offer.price}</strong>{" "}
                 {lead.offer.originalLabel}{" "}
                 <span className="line-through opacity-50">{lead.offer.originalPrice}</span>
               </p>
               {countdown && (
-                <p className="text-[11px] font-medium text-[rgba(232,200,122,0.6)] mt-0.5">
+                <p className="text-[11px] font-medium text-[rgba(232,200,122,0.85)] mt-0.5">
                   {lead.offer.countdown}{" "}
                   {countdown.mode === "days"
                     ? `${countdown.days} ${dict.countdown.days} · ${countdown.h} ${dict.countdown.hours}`
@@ -504,7 +504,7 @@ function LeadCapture({ dict, questionCount, showPrice, onSubmit }: LeadCapturePr
         <div className="au d3 flex flex-col gap-[22px]">
           {(["name", "email", "phone"] as const).map((key) => (
             <div key={key}>
-              <label className="block text-[10px] font-medium tracking-[0.12em] uppercase text-[rgba(240,239,233,0.7)] mb-1">
+              <label className="block text-[10px] font-medium tracking-[0.12em] uppercase text-[rgba(240,239,233,0.88)] mb-1">
                 {lead.fields[key].label}
               </label>
               <input
@@ -532,7 +532,7 @@ function LeadCapture({ dict, questionCount, showPrice, onSubmit }: LeadCapturePr
             )}
             {isLoading ? lead.ctaLoading : lead.cta}
           </button>
-          <p className="text-[11px] font-medium text-[rgba(240,239,233,0.7)] text-center">
+          <p className="text-[11px] font-medium text-[rgba(240,239,233,0.88)] text-center">
             {lead.security}
           </p>
         </div>
@@ -577,13 +577,13 @@ function ThankYou({ dict, questionCount, result, name }: ThankYouProps) {
         </div>
 
         <div className="au d3">
-          <p className="text-[14.5px] leading-[1.75] text-[rgba(240,239,233,0.7)] max-w-[400px]">
+          <p className="text-[14.5px] leading-[1.75] text-[rgba(240,239,233,0.88)] max-w-[400px]">
             {result.body}
           </p>
         </div>
 
         <div className="au d3 bg-[rgba(232,200,122,0.04)] border border-[rgba(232,200,122,0.12)] rounded-[12px] p-[20px_22px] w-full text-left">
-          <p className="text-[10px] font-medium tracking-[0.12em] uppercase text-[rgba(240,239,233,0.65)] mb-3.5">
+          <p className="text-[10px] font-medium tracking-[0.12em] uppercase text-[rgba(240,239,233,0.85)] mb-3.5">
             {thanks.nextStepsLabel}
           </p>
           {([
@@ -593,13 +593,13 @@ function ThankYou({ dict, questionCount, result, name }: ThankYouProps) {
           ] as const).map(({ icon, text }, index) => (
             <div key={index} className={`flex gap-3 items-start${index < 2 ? " mb-2.5" : ""}`}>
               <span className="text-[13px] flex-shrink-0 mt-px">{icon}</span>
-              <span className="text-[13px] text-[rgba(240,239,233,0.7)] leading-[1.55]">{text}</span>
+              <span className="text-[13px] text-[rgba(240,239,233,0.88)] leading-[1.55]">{text}</span>
             </div>
           ))}
         </div>
 
         <div className="au d4">
-          <p className="text-[11px] font-medium text-[rgba(240,239,233,0.65)]">
+          <p className="text-[11px] font-medium text-[rgba(240,239,233,0.85)]">
             {thanks.curious}{" "}
             <a
               href="https://kasoria.com"
