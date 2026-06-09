@@ -9,6 +9,7 @@ import { FunnelBar } from "./FunnelBar";
 declare global {
   interface Window {
     fbq?: (...args: unknown[]) => void;
+    dataLayer?: Record<string, unknown>[];
   }
 }
 
@@ -688,6 +689,7 @@ export function WebsiteCheckFunnel({ dict, variant: variantProp, lang = "de" }: 
 
     posthog?.capture("funnel_lead_submitted", { ...sharedProps, email: data.email });
     window.fbq?.("track", "Lead", {}, { eventID: eventId });
+    window.dataLayer?.push({ event: "lead_submitted" });
 
     try {
       await fetch("/api/leads", {
