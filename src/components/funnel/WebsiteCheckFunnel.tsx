@@ -93,6 +93,7 @@ interface LeadData {
   name: string;
   email: string;
   phone: string;
+  websiteUrl: string;
 }
 
 interface QuestionSlideData {
@@ -107,7 +108,11 @@ interface TrustSlideData {
   trustFn: "trust1" | "trust2";
 }
 
-type SlideData = QuestionSlideData | TrustSlideData;
+interface UrlInputSlideData {
+  type: "url-input";
+}
+
+type SlideData = QuestionSlideData | TrustSlideData | UrlInputSlideData;
 
 // ─── SLIDE BUILDER ────────────────────────────────────────────────────────────
 
@@ -116,6 +121,7 @@ function buildSlides(dict: FunnelDict): SlideData[] {
   return [
     { type: "q", qKey: 0, q: q0.q, opts: q0.opts },
     { type: "q", qKey: 1, q: q1.q, opts: q1.opts },
+    { type: "url-input" },
     { type: "trust", trustFn: "trust1" },
     { type: "q", qKey: 2, q: q2.q, opts: q2.opts },
     { type: "q", qKey: 3, q: q3.q, opts: q3.opts },
@@ -333,6 +339,77 @@ function QuestionSlide({ slide, qDone, questionCount, dict, onAnswer, onBack }: 
   );
 }
 
+// ─── URL INPUT SLIDE ──────────────────────────────────────────────────────────
+
+interface UrlInputSlideProps {
+  qDone: number;
+  questionCount: number;
+  dict: FunnelDict;
+  initialValue: string;
+  onNext: (url: string) => void;
+  onBack: () => void;
+}
+
+function UrlInputSlide({ qDone, questionCount, dict, initialValue, onNext, onBack }: UrlInputSlideProps) {
+  const [url, setUrl] = useState(initialValue);
+  const { websiteUrl } = dict.quiz;
+
+  return (
+    <div className={`${SCREEN} bg-[#0a0a0a]`}>
+      <FunnelLogo belowBanner />
+      <FunnelBar done={qDone} total={questionCount} />
+      <CountdownBanner cd={dict.countdown} />
+
+      <div className={`${CARD} flex flex-col gap-6`}>
+
+        <div className="au d1 flex items-center gap-2">
+          <BackButton onClick={onBack} />
+          <div className="flex justify-between flex-1">
+            <span className="text-[10px] font-medium tracking-[0.12em] uppercase text-[rgba(240,239,233,0.85)]">
+              {dict.quiz.progressLabel} {qDone + 1} / {questionCount}
+            </span>
+            <span className="text-[10px] text-[#E8C87A] font-semibold">
+              {Math.round((qDone / questionCount) * 100)}%
+            </span>
+          </div>
+        </div>
+
+        <div className="au d2">
+          <h2 className="font-heading text-[clamp(19px,4vw,27px)] font-normal leading-[1.25] text-[#f0efe9]">
+            {websiteUrl.q}
+          </h2>
+        </div>
+
+        <div className="au d3">
+          <input
+            type="url"
+            placeholder={websiteUrl.placeholder}
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            autoFocus
+            className="bg-transparent border-none border-b border-[rgba(232,200,122,0.2)] text-[#f0efe9] font-body text-[15px] py-3 w-full outline-none transition-[border-color] duration-200 focus:border-b-[rgba(232,200,122,0.6)] placeholder:text-[rgba(240,239,233,0.22)] placeholder:text-[13px]"
+          />
+        </div>
+
+        <div className="au d4 flex flex-col gap-3">
+          <button
+            className="bg-[#E8C87A] text-[#2A1800] border-none px-7 py-[15px] font-body font-bold text-xs tracking-[0.07em] uppercase rounded-[9px] cursor-pointer hover:opacity-90 transition-opacity w-full"
+            onClick={() => onNext(url.trim())}
+          >
+            {dict.quiz.continueBtn}
+          </button>
+          <button
+            className="text-[11px] font-medium text-[rgba(240,239,233,0.5)] hover:text-[rgba(240,239,233,0.8)] transition-colors text-center w-full"
+            onClick={() => onNext("")}
+          >
+            {websiteUrl.skip}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── TRUST SLIDE: TESTIMONIAL ─────────────────────────────────────────────────
 
 interface TestimonialSlideProps {
@@ -459,13 +536,13 @@ interface LeadCaptureProps {
 }
 
 function LeadCapture({ dict, questionCount, showPrice, onSubmit, onBack }: LeadCaptureProps) {
-  const [formValues, setFormValues] = useState<LeadData>({ name: "", email: "", phone: "" });
+  const [formValues, setFormValues] = useState<LeadData>({ name: "", email: "", phone: "", websiteUrl: "" });
   const [isLoading, setIsLoading] = useState(false);
   const countdown = useCountdown();
   const { lead } = dict;
 
   const handleSubmit = async () => {
-    if (!formValues.name.trim() || !formValues.email.trim()) return;
+    if (!formValues.name.trim() || !formValues.email.trim() || !formValues.phone.trim()) return;
     setIsLoading(true);
     await onSubmit(formValues);
   };
@@ -526,16 +603,16 @@ function LeadCapture({ dict, questionCount, showPrice, onSubmit, onBack }: LeadC
         <div className="h-px bg-[rgba(232,200,122,0.12)]" />
 
         <div className="au d3 flex flex-col gap-[22px]">
-          {(["name", "email", "phone"] as const).map((key) => (
-            <div key={key}>
+          {(["name", "email", "phone", "websiteUrl"] as const).map((fieldKey) => (
+            <div key={fieldKey}>
               <label className="block text-[10px] font-medium tracking-[0.12em] uppercase text-[rgba(240,239,233,0.88)] mb-1">
-                {lead.fields[key].label}
+                {lead.fields[fieldKey].label}
               </label>
               <input
-                type={key === "email" ? "email" : key === "phone" ? "tel" : "text"}
-                placeholder={lead.fields[key].placeholder}
-                value={formValues[key]}
-                onChange={(e) => setFormValues({ ...formValues, [key]: e.target.value })}
+                type={fieldKey === "email" ? "email" : fieldKey === "phone" ? "tel" : fieldKey === "websiteUrl" ? "url" : "text"}
+                placeholder={lead.fields[fieldKey].placeholder}
+                value={formValues[fieldKey]}
+                onChange={(e) => setFormValues({ ...formValues, [fieldKey]: e.target.value })}
                 className="bg-transparent border-none border-b border-[rgba(232,200,122,0.2)] text-[#f0efe9] font-body text-[15px] py-3 w-full outline-none transition-[border-color] duration-200 focus:border-b-[rgba(232,200,122,0.6)] placeholder:text-[rgba(240,239,233,0.22)] placeholder:text-[13px]"
               />
             </div>
@@ -546,7 +623,7 @@ function LeadCapture({ dict, questionCount, showPrice, onSubmit, onBack }: LeadC
           <button
             className="bg-[#E8C87A] text-[#2A1800] border-none px-7 py-[15px] font-body font-bold text-xs tracking-[0.07em] uppercase rounded-[9px] cursor-pointer hover:opacity-90 transition-opacity w-full disabled:opacity-30 disabled:cursor-default flex items-center justify-center gap-2"
             onClick={handleSubmit}
-            disabled={!formValues.name.trim() || !formValues.email.trim() || isLoading}
+            disabled={!formValues.name.trim() || !formValues.email.trim() || !formValues.phone.trim() || isLoading}
           >
             {isLoading && (
               <svg className="animate-spin h-4 w-4 flex-shrink-0" viewBox="0 0 24 24" fill="none">
@@ -671,11 +748,16 @@ export function WebsiteCheckFunnel({ dict, variant: variantProp, lang = "de" }: 
   const [qDone, setQDone]           = useState(0);
   const [answers, setAnswers]       = useState<Answers>({});
   const [leadName, setLeadName]     = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
 
   const sharedProps = { funnel: "website-check", variant, lang };
 
-  const advance = () => {
-    const next = slideIndex + 1;
+  const advance = (currentAnswers: Answers = answers) => {
+    let next = slideIndex + 1;
+    // Skip url-input slide when user has no website (Q1 answer index 0)
+    if (next < slides.length && slides[next].type === "url-input" && currentAnswers[1] === 0) {
+      next += 1;
+    }
     if (next >= slides.length) {
       posthog?.capture("funnel_lead_view", sharedProps);
       setPhase("lead");
@@ -697,9 +779,18 @@ export function WebsiteCheckFunnel({ dict, variant: variantProp, lang = "de" }: 
         setPhase("landing");
         return;
       }
-      const prevSlide = slides[slideIndex - 1];
+      let prevIndex = slideIndex - 1;
+      // Skip url-input slide going back when user has no website
+      if (slides[prevIndex].type === "url-input" && answers[1] === 0) {
+        prevIndex -= 1;
+      }
+      if (prevIndex < 0) {
+        setPhase("landing");
+        return;
+      }
+      const prevSlide = slides[prevIndex];
       if (prevSlide.type === "q") setQDone((n) => n - 1);
-      setSlideIndex((n) => n - 1);
+      setSlideIndex(prevIndex);
     }
   };
 
@@ -710,9 +801,10 @@ export function WebsiteCheckFunnel({ dict, variant: variantProp, lang = "de" }: 
       question_index: currentSlide.qKey,
       answer_index: selectedIndex,
     });
-    setAnswers((prev) => ({ ...prev, [currentSlide.qKey]: selectedIndex }));
+    const updatedAnswers = { ...answers, [currentSlide.qKey]: selectedIndex };
+    setAnswers(updatedAnswers);
     setQDone((n) => n + 1);
-    advance();
+    advance(updatedAnswers);
   };
 
   const handleLead = async (data: LeadData): Promise<void> => {
@@ -738,7 +830,7 @@ export function WebsiteCheckFunnel({ dict, variant: variantProp, lang = "de" }: 
       await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, answers, resolvedAnswers, variant, funnel: "website-check", lang, eventId, fbp, fbc }),
+        body: JSON.stringify({ ...data, websiteUrl: websiteUrl || data.websiteUrl, answers, resolvedAnswers, variant, funnel: "website-check", lang, eventId, fbp, fbc }),
         keepalive: true,
       });
     } catch {
@@ -773,6 +865,23 @@ export function WebsiteCheckFunnel({ dict, variant: variantProp, lang = "de" }: 
           questionCount={questionCount}
           dict={dict}
           onAnswer={handleAnswer}
+          onBack={goBack}
+        />
+      );
+    }
+
+    if (currentSlide.type === "url-input") {
+      return (
+        <UrlInputSlide
+          key={slideIndex}
+          qDone={qDone}
+          questionCount={questionCount}
+          dict={dict}
+          initialValue={websiteUrl}
+          onNext={(url) => {
+            setWebsiteUrl(url);
+            advance();
+          }}
           onBack={goBack}
         />
       );

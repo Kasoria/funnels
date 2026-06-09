@@ -27,6 +27,11 @@ export const de = {
   quiz: {
     progressLabel: "Frage",
     continueBtn: "Weiter →",
+    websiteUrl: {
+      q: "Wie lautet deine aktuelle Website-URL?",
+      placeholder: "https://deine-website.de",
+      skip: "Überspringen →",
+    },
     questions: [
       {
         q: "Was beschreibt dein Unternehmen am besten?",
@@ -145,7 +150,8 @@ export const de = {
     fields: {
       name:  { label: "Dein Vorname *",  placeholder: "Max" },
       email: { label: "E-Mail *",         placeholder: "max@unternehmen.de" },
-      phone: { label: "Telefon (für schnellere Kontaktaufnahme)", placeholder: "+49 160 000 0000" },
+      phone: { label: "Telefon *",        placeholder: "+49 160 000 0000" },
+      websiteUrl: { label: "Deine Website-URL (falls vorhanden)", placeholder: "https://deine-website.de" },
     },
     cta: "Jetzt Gespräch anfragen →",
     ctaLoading: "Wird übermittelt…",

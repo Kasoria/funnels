@@ -27,6 +27,11 @@ export const en = {
   quiz: {
     progressLabel: "Question",
     continueBtn: "Continue →",
+    websiteUrl: {
+      q: "What's your current website URL?",
+      placeholder: "https://your-website.com",
+      skip: "Skip →",
+    },
     questions: [
       {
         q: "What best describes your business?",
@@ -145,7 +150,8 @@ export const en = {
     fields: {
       name:  { label: "Your first name *", placeholder: "Alex" },
       email: { label: "Email *",           placeholder: "alex@company.com" },
-      phone: { label: "Phone (for faster response)", placeholder: "+1 555 000 0000" },
+      phone: { label: "Phone *",           placeholder: "+1 555 000 0000" },
+      websiteUrl: { label: "Your website URL (if you have one)", placeholder: "https://your-website.com" },
     },
     cta: "Request a free call →",
     ctaLoading: "Sending…",

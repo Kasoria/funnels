@@ -47,6 +47,11 @@ export interface FunnelDict {
   quiz: {
     progressLabel: string; // "Frage" / "Question"
     continueBtn: string;
+    websiteUrl: {
+      q: string;
+      placeholder: string;
+      skip: string;
+    };
     // 6 questions — order must match qKey 0–5 in the funnel
     questions: readonly [
       { q: string; opts: readonly string[] },
@@ -85,6 +90,7 @@ export interface FunnelDict {
       name: { label: string; placeholder: string };
       email: { label: string; placeholder: string };
       phone: { label: string; placeholder: string };
+      websiteUrl: { label: string; placeholder: string };
     };
     cta: string;
     ctaLoading: string;
