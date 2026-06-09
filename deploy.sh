@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-APP_NAME="kasoria_check"
+APP_NAME="kasoria-funnels"
 PORT=3018
 
 echo "=== Deploying $APP_NAME ==="
@@ -27,4 +27,4 @@ fi
 
 pm2 save
 
-echo "=== $APP_NAME deployed successfully on port $PORT ==="
+echo "=== $APP_NAME deployed on port $PORT ==="
