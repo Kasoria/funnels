@@ -387,22 +387,17 @@ function UrlInputSlide({ qDone, questionCount, dict, initialValue, onNext, onBac
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             autoFocus
-            className="bg-transparent border-none border-b border-[rgba(232,200,122,0.2)] text-[#f0efe9] font-body text-[15px] py-3 w-full outline-none transition-[border-color] duration-200 focus:border-b-[rgba(232,200,122,0.6)] placeholder:text-[rgba(240,239,233,0.22)] placeholder:text-[13px]"
+            className="bg-transparent border-none border-b border-[rgba(232,200,122,0.45)] text-[#f0efe9] font-body text-[15px] py-3 w-full outline-none transition-[border-color] duration-200 focus:border-b-[rgba(232,200,122,0.85)] placeholder:text-[rgba(240,239,233,0.38)] placeholder:text-[13px]"
           />
         </div>
 
-        <div className="au d4 flex flex-col gap-3">
+        <div className="au d4">
           <button
-            className="bg-[#E8C87A] text-[#2A1800] border-none px-7 py-[15px] font-body font-bold text-xs tracking-[0.07em] uppercase rounded-[9px] cursor-pointer hover:opacity-90 transition-opacity w-full"
+            className="bg-[#E8C87A] text-[#2A1800] border-none px-7 py-[15px] font-body font-bold text-xs tracking-[0.07em] uppercase rounded-[9px] cursor-pointer hover:opacity-90 transition-opacity w-full disabled:opacity-30 disabled:cursor-default"
             onClick={() => onNext(url.trim())}
+            disabled={!url.trim()}
           >
             {dict.quiz.continueBtn}
-          </button>
-          <button
-            className="text-[11px] font-medium text-[rgba(240,239,233,0.5)] hover:text-[rgba(240,239,233,0.8)] transition-colors text-center w-full"
-            onClick={() => onNext("")}
-          >
-            {websiteUrl.skip}
           </button>
         </div>
       </div>
@@ -613,7 +608,7 @@ function LeadCapture({ dict, questionCount, showPrice, onSubmit, onBack }: LeadC
                 placeholder={lead.fields[fieldKey].placeholder}
                 value={formValues[fieldKey]}
                 onChange={(e) => setFormValues({ ...formValues, [fieldKey]: e.target.value })}
-                className="bg-transparent border-none border-b border-[rgba(232,200,122,0.2)] text-[#f0efe9] font-body text-[15px] py-3 w-full outline-none transition-[border-color] duration-200 focus:border-b-[rgba(232,200,122,0.6)] placeholder:text-[rgba(240,239,233,0.22)] placeholder:text-[13px]"
+                className="bg-transparent border-none border-b border-[rgba(232,200,122,0.45)] text-[#f0efe9] font-body text-[15px] py-3 w-full outline-none transition-[border-color] duration-200 focus:border-b-[rgba(232,200,122,0.85)] placeholder:text-[rgba(240,239,233,0.38)] placeholder:text-[13px]"
               />
             </div>
           ))}
