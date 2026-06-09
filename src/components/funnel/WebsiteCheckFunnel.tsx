@@ -272,7 +272,7 @@ function QuestionSlide({ slide, qDone, questionCount, dict, onAnswer, onBack }: 
 
   return (
     <div className={`${SCREEN} bg-[#0a0a0a]`}>
-      <FunnelLogo />
+      <FunnelLogo belowBanner />
       <FunnelBar done={qDone} total={questionCount} />
       <CountdownBanner cd={dict.countdown} />
 
@@ -348,7 +348,7 @@ interface TestimonialSlideProps {
 function TestimonialSlide({ content, qDone, questionCount, continueBtn, cd, onNext, onBack }: TestimonialSlideProps) {
   return (
     <div className={`${SCREEN} bg-[#0f0f0d]`}>
-      <FunnelLogo />
+      <FunnelLogo belowBanner />
       <FunnelBar done={qDone} total={questionCount} />
       <CountdownBanner cd={cd} />
 
@@ -401,7 +401,7 @@ interface StatsSlideProps {
 function StatsSlide({ content, qDone, questionCount, continueBtn, cd, onNext, onBack }: StatsSlideProps) {
   return (
     <div className={`${SCREEN} bg-[#0f0f0d]`}>
-      <FunnelLogo />
+      <FunnelLogo belowBanner />
       <FunnelBar done={qDone} total={questionCount} />
       <CountdownBanner cd={cd} />
 
