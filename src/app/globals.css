@@ -70,3 +70,54 @@ html {
 .d3 { animation-delay: 0.21s; opacity: 0; }
 .d4 { animation-delay: 0.30s; opacity: 0; }
 .d5 { animation-delay: 0.38s; opacity: 0; }
+
+/* Legal page prose */
+.prose-legal h1 {
+  font-family: var(--font-family-heading);
+  font-size: clamp(22px, 4vw, 32px);
+  font-weight: 400;
+  color: #f0efe9;
+  margin: 0 0 32px;
+  line-height: 1.2;
+}
+.prose-legal h2 {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(240,239,233,0.5);
+  margin: 36px 0 10px;
+}
+.prose-legal p {
+  font-size: 14.5px;
+  line-height: 1.8;
+  color: rgba(240,239,233,0.75);
+  margin: 0 0 14px;
+}
+.prose-legal ul {
+  margin: 0 0 14px;
+  padding-left: 20px;
+}
+.prose-legal li {
+  font-size: 14.5px;
+  line-height: 1.8;
+  color: rgba(240,239,233,0.75);
+  margin-bottom: 6px;
+}
+.prose-legal strong {
+  color: rgba(240,239,233,0.9);
+  font-weight: 600;
+}
+.prose-legal a {
+  color: #E8C87A;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.prose-legal a:hover {
+  opacity: 0.8;
+}
+.prose-legal hr {
+  border: none;
+  border-top: 1px solid rgba(240,239,233,0.08);
+  margin: 32px 0;
+}

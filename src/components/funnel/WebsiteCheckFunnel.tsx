@@ -1,9 +1,16 @@
 "use client";
 
 import { useState, useEffect, Fragment } from "react";
+import { usePostHog } from "posthog-js/react";
 import type { FunnelDict, TrustTestimonial, TrustStats, FunnelResult } from "@/locales/types";
 import { FunnelLogo } from "./FunnelLogo";
 import { FunnelBar } from "./FunnelBar";
+
+declare global {
+  interface Window {
+    fbq?: (...args: unknown[]) => void;
+  }
+}
 
 // ─── COUNTDOWN ────────────────────────────────────────────────────────────────
 
@@ -112,7 +119,7 @@ const CARD   = "w-full max-w-[480px]";
 
 // ─── LANDING ──────────────────────────────────────────────────────────────────
 
-function Landing({ dict, onStart }: { dict: FunnelDict; onStart: () => void }) {
+function Landing({ dict, lang, onStart }: { dict: FunnelDict; lang: "de" | "en"; onStart: () => void }) {
   const countdown = useCountdown();
   const { landing, countdown: cd } = dict;
 
@@ -187,8 +194,12 @@ function Landing({ dict, onStart }: { dict: FunnelDict; onStart: () => void }) {
         </div>
       </div>
 
-      <div className="absolute bottom-5 text-[10px] font-medium text-[rgba(240,239,233,0.55)]">
-        {landing.footer}
+      <div className="absolute bottom-5 flex flex-col items-center gap-1.5">
+        <span className="text-[10px] font-medium text-[rgba(240,239,233,0.55)]">{landing.footer}</span>
+        <div className="flex gap-3 text-[10px] text-[rgba(240,239,233,0.35)]">
+          <a href={lang === "en" ? "/en/impressum" : "/impressum"} className="hover:text-[rgba(240,239,233,0.6)] transition-colors">{lang === "en" ? "Legal Notice" : "Impressum"}</a>
+          <a href={lang === "en" ? "/en/datenschutz" : "/datenschutz"} className="hover:text-[rgba(240,239,233,0.6)] transition-colors">{lang === "en" ? "Privacy Policy" : "Datenschutz"}</a>
+        </div>
       </div>
     </div>
   );
@@ -570,6 +581,7 @@ export interface WebsiteCheckFunnelProps {
 }
 
 export function WebsiteCheckFunnel({ dict, variant: variantProp, lang = "de" }: WebsiteCheckFunnelProps) {
+  const posthog = usePostHog();
   const [variant] = useState<"a" | "b">(() => variantProp ?? (Math.random() < 0.5 ? "a" : "b"));
 
   useEffect(() => {
@@ -584,20 +596,31 @@ export function WebsiteCheckFunnel({ dict, variant: variantProp, lang = "de" }: 
   const slides = buildSlides(dict);
   const questionCount = slides.filter((s) => s.type === "q").length;
 
-  const [phase, setPhase]         = useState<Phase>("landing");
+  const [phase, setPhase]           = useState<Phase>("landing");
   const [slideIndex, setSlideIndex] = useState(0);
   const [qDone, setQDone]           = useState(0);
   const [answers, setAnswers]       = useState<Answers>({});
   const [leadName, setLeadName]     = useState("");
 
+  const sharedProps = { funnel: "website-check", variant, lang };
+
   const advance = () => {
     const next = slideIndex + 1;
-    if (next >= slides.length) setPhase("lead");
-    else setSlideIndex(next);
+    if (next >= slides.length) {
+      posthog?.capture("funnel_lead_view", sharedProps);
+      setPhase("lead");
+    } else {
+      setSlideIndex(next);
+    }
   };
 
   const handleAnswer = (selectedIndex: number) => {
     const currentSlide = slides[slideIndex] as QuestionSlideData;
+    posthog?.capture("funnel_question_answered", {
+      ...sharedProps,
+      question_index: currentSlide.qKey,
+      answer_index: selectedIndex,
+    });
     setAnswers((prev) => ({ ...prev, [currentSlide.qKey]: selectedIndex }));
     setQDone((n) => n + 1);
     advance();
@@ -609,20 +632,43 @@ export function WebsiteCheckFunnel({ dict, variant: variantProp, lang = "de" }: 
       q: question.q,
       a: answers[index] !== undefined ? question.opts[answers[index]] : "–",
     }));
+
+    const eventId = `lead_${crypto.randomUUID()}`;
+    const readCookie = (name: string) => {
+      const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
+      return match ? decodeURIComponent(match[1]) : null;
+    };
+    const fbp = readCookie("_fbp");
+    const fbc = readCookie("_fbc");
+
+    posthog?.capture("funnel_lead_submitted", { ...sharedProps, email: data.email });
+    window.fbq?.("track", "Lead", {}, { eventID: eventId });
+
     try {
       await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, answers, resolvedAnswers, variant, funnel: "website-check", lang }),
+        body: JSON.stringify({ ...data, answers, resolvedAnswers, variant, funnel: "website-check", lang, eventId, fbp, fbc }),
+        keepalive: true,
       });
     } catch {
       // Silent fail — lead sees thank-you regardless
     }
+    posthog?.capture("funnel_completed", sharedProps);
     setPhase("thanks");
   };
 
   if (phase === "landing") {
-    return <Landing dict={dict} onStart={() => setPhase("quiz")} />;
+    return (
+      <Landing
+        dict={dict}
+        lang={lang}
+        onStart={() => {
+          posthog?.capture("funnel_started", sharedProps);
+          setPhase("quiz");
+        }}
+      />
+    );
   }
 
   if (phase === "quiz") {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendCapiEvent, capiContextFromRequest } from "@/lib/meta-capi";
 
 interface ResolvedAnswer {
   q: string;
@@ -14,9 +15,13 @@ interface LeadPayload {
   variant: string;
   funnel: string;
   lang?: "de" | "en";
+  // Dedup + match quality from browser
+  eventId?: string;
+  fbp?: string | null;
+  fbc?: string | null;
 }
 
-const EMAIL_STYLES = `
+const ADMIN_STYLES = `
   body { margin: 0; padding: 0; background: #f5f5f3; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
   .wrap { max-width: 560px; margin: 40px auto; background: #ffffff; border-radius: 8px; overflow: hidden; }
   .body { padding: 36px 40px; color: #1a1a1a; font-size: 15px; line-height: 1.7; }
@@ -29,24 +34,29 @@ const EMAIL_STYLES = `
   .footer a { color: #999; text-decoration: none; }
 `.replace(/\n\s*/g, " ").trim();
 
-function buildConfirmationHtml(name: string, intro: string, summaryLabel: string, answers: ResolvedAnswer[], closing: string, sign: string): string {
+const CONFIRMATION_STYLES = `
+  body { margin: 0; padding: 0; background: #ffffff; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+  .content { max-width: 560px; padding: 40px 24px; color: #1a1a1a; font-size: 15px; line-height: 1.75; }
+  .content p { margin: 0 0 18px; }
+  .answer-item { margin-bottom: 18px; }
+  .answer-q { font-weight: 600; color: #1a1a1a; }
+  .answer-a { color: #555; margin-top: 2px; }
+  .sig { color: #1a1a1a; margin-top: 28px; }
+`.replace(/\n\s*/g, " ").trim();
+
+function buildConfirmationHtml(name: string, greeting: string, intro: string, summaryLabel: string, answers: ResolvedAnswer[], closing: string, sign: string): string {
   const answerItems = answers
     .map(({ q, a }, i) => `<div class="answer-item"><div class="answer-q">${i + 1}. ${q}</div><div class="answer-a">${a}</div></div>`)
     .join("");
 
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${EMAIL_STYLES}</style></head><body>
-<div class="wrap">
-  <div class="body">
-    <p>Hallo ${name},</p>
-    <p>${intro}</p>
-    <div class="answers">
-      <p style="margin:0 0 16px;font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:#999">${summaryLabel}</p>
-      ${answerItems}
-    </div>
-    <p>${closing}</p>
-    <p style="margin-bottom:0">${sign}</p>
-  </div>
-  <div class="footer">Kasoria · <a href="https://kasoria.com">kasoria.com</a></div>
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${CONFIRMATION_STYLES}</style></head><body>
+<div class="content">
+  <p>${greeting} ${name},</p>
+  <p>${intro}</p>
+  <p>${summaryLabel}</p>
+  ${answerItems}
+  <p style="margin-top:18px">${closing}</p>
+  <div class="sig">${sign}<br>Kasoria · kasoria.com</div>
 </div>
 </body></html>`;
 }
@@ -56,18 +66,12 @@ function buildAdminHtml(name: string, email: string, phone: string, funnel: stri
     .map(({ q, a }, i) => `<div class="answer-item"><div class="answer-q">${i + 1}. ${q}</div><div class="answer-a">${a}</div></div>`)
     .join("");
 
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${EMAIL_STYLES}</style></head><body>
-<div class="wrap">
-  <div class="body">
-    <p style="margin-bottom:20px">
-      <strong>${name}</strong> — <a href="mailto:${email}">${email}</a><br>
-      <span style="color:#999;font-size:13px">Telefon: ${phone} · Funnel: ${funnel} · Variante: ${variant} · Sprache: ${lang}</span>
-    </p>
-    <div class="answers">
-      <p style="margin:0 0 16px;font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:#999">Antworten</p>
-      ${answerItems}
-    </div>
-  </div>
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${CONFIRMATION_STYLES}</style></head><body>
+<div class="content">
+  <p><strong>${name}</strong> — <a href="mailto:${email}" style="color:#1a1a1a">${email}</a><br>
+  <span style="color:#888;font-size:13px">Telefon: ${phone} · Funnel: ${funnel} · Variante: ${variant} · Sprache: ${lang}</span></p>
+  <p style="font-weight:600">Antworten:</p>
+  ${answerItems}
 </div>
 </body></html>`;
 }
@@ -81,7 +85,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { name, email, funnel, variant, answers, resolvedAnswers = [], lang = "de" } = payload;
+  const { name, email, funnel, variant, answers, resolvedAnswers = [], lang = "de", eventId, fbp, fbc } = payload;
 
   if (!name?.trim() || !email?.trim()) {
     return NextResponse.json({ error: "Name and email are required" }, { status: 422 });
@@ -89,6 +93,27 @@ export async function POST(request: NextRequest) {
 
   if (process.env.NODE_ENV === "development") {
     console.log("[Lead]", { name, email, funnel, variant, answers });
+  }
+
+  // CAPI: fire server-side Lead event (deduped against browser Pixel via eventId)
+  if (eventId) {
+    const { clientIp, userAgent, fbp: cookieFbp, fbc: cookieFbc } = capiContextFromRequest(request);
+    const [firstName, ...rest] = name.trim().split(" ");
+    await sendCapiEvent({
+      eventName: "Lead",
+      eventId,
+      eventSourceUrl: `https://check.kasoria.com/${lang === "en" ? "en/" : ""}website-check`,
+      user: {
+        email,
+        firstName,
+        lastName: rest.join(" ") || undefined,
+        externalId: email,
+        fbp: fbp ?? cookieFbp,
+        fbc: fbc ?? cookieFbc,
+        clientIp,
+        userAgent,
+      },
+    });
   }
 
   if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
@@ -123,8 +148,8 @@ export async function POST(request: NextRequest) {
       : [`Hallo ${name},`, ``, `vielen Dank für deinen Website-Check – wir haben deine Antworten erhalten und melden uns persönlich innerhalb von 1–2 Werktagen bei dir.`, ``, `Zusammenfassung deiner Angaben:`, ``, ...resolvedAnswers.map(({ q, a }, i) => `${i + 1}. ${q}\n   ${a}`), ``, `Falls du zwischendurch Fragen hast, antworte einfach auf diese E-Mail.`, ``, `Viele Grüße,\nChristian\nKasoria · kasoria.com`].join("\n");
 
     const confirmationHtml = isEn
-      ? buildConfirmationHtml(name, `thanks for completing the website check — we've received your answers and will get back to you personally within 1–2 business days.`, "Your answers", resolvedAnswers, `If you have any questions in the meantime, just reply to this email.`, `Best,<br>Christian`)
-      : buildConfirmationHtml(name, `vielen Dank für deinen Website-Check – wir haben deine Antworten erhalten und melden uns persönlich innerhalb von 1–2 Werktagen bei dir.`, `Deine Angaben`, resolvedAnswers, `Falls du zwischendurch Fragen hast, antworte einfach auf diese E-Mail.`, `Viele Grüße,<br>Christian`);
+      ? buildConfirmationHtml(name, `Hi`, `thanks for completing the website check — we've received your answers and will get back to you personally within 1–2 business days.`, `Here's a summary of your answers:`, resolvedAnswers, `If you have any questions in the meantime, just reply to this email.`, `Best,<br>Christian`)
+      : buildConfirmationHtml(name, `Hallo`, `vielen Dank für deinen Website-Check – wir haben deine Antworten erhalten und melden uns persönlich innerhalb von 1–2 Werktagen bei dir.`, `Hier eine Zusammenfassung deiner Angaben:`, resolvedAnswers, `Falls du zwischendurch Fragen hast, antworte einfach auf diese E-Mail.`, `Viele Grüße,<br>Christian`);
 
     await transporter.sendMail({
       from: process.env.SMTP_FROM ?? process.env.SMTP_USER,
