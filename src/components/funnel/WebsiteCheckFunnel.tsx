@@ -21,7 +21,11 @@ interface CountdownTime {
 }
 
 function useCountdown(): CountdownTime | null {
-  const [deadline] = useState(() => Date.now() + 47 * 3_600_000 + 23 * 60_000);
+  const [deadline] = useState(() => {
+    const now = new Date();
+    // Last millisecond of the last day of the current month
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).getTime();
+  });
   const [time, setTime] = useState<CountdownTime | null>(null);
 
   useEffect(() => {
@@ -43,6 +47,28 @@ function useCountdown(): CountdownTime | null {
   }, [deadline]);
 
   return time;
+}
+
+// ─── COUNTDOWN BANNER ─────────────────────────────────────────────────────────
+
+interface CountdownBannerProps {
+  cd: FunnelDict["countdown"];
+}
+
+function CountdownBanner({ cd }: CountdownBannerProps) {
+  const countdown = useCountdown();
+  if (!countdown) return null;
+
+  return (
+    <div className="absolute top-[3px] left-0 right-0 flex items-center justify-center gap-1.5 bg-[rgba(232,200,122,0.07)] border-b border-[rgba(232,200,122,0.1)] py-1.5 px-4">
+      <span className="text-[#E8C87A] text-[10px] font-bold tracking-[0.06em] uppercase whitespace-nowrap">
+        {cd.badge}
+      </span>
+      <span className="text-[10px] font-mono font-bold text-[rgba(240,239,233,0.85)] tabular-nums">
+        {countdown.h}:{countdown.m}:{countdown.s}
+      </span>
+    </div>
+  );
 }
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
@@ -222,6 +248,7 @@ function QuestionSlide({ slide, qDone, questionCount, dict, onAnswer }: Question
     <div className={`${SCREEN} bg-[#0a0a0a]`}>
       <FunnelLogo />
       <FunnelBar done={qDone} total={questionCount} />
+      <CountdownBanner cd={dict.countdown} />
 
       <div className={`${CARD} flex flex-col gap-6`}>
 
@@ -284,14 +311,16 @@ interface TestimonialSlideProps {
   qDone: number;
   questionCount: number;
   continueBtn: string;
+  cd: FunnelDict["countdown"];
   onNext: () => void;
 }
 
-function TestimonialSlide({ content, qDone, questionCount, continueBtn, onNext }: TestimonialSlideProps) {
+function TestimonialSlide({ content, qDone, questionCount, continueBtn, cd, onNext }: TestimonialSlideProps) {
   return (
     <div className={`${SCREEN} bg-[#0f0f0d]`}>
       <FunnelLogo />
       <FunnelBar done={qDone} total={questionCount} />
+      <CountdownBanner cd={cd} />
 
       <div className={`${CARD} flex flex-col gap-7`}>
 
@@ -333,14 +362,16 @@ interface StatsSlideProps {
   qDone: number;
   questionCount: number;
   continueBtn: string;
+  cd: FunnelDict["countdown"];
   onNext: () => void;
 }
 
-function StatsSlide({ content, qDone, questionCount, continueBtn, onNext }: StatsSlideProps) {
+function StatsSlide({ content, qDone, questionCount, continueBtn, cd, onNext }: StatsSlideProps) {
   return (
     <div className={`${SCREEN} bg-[#0f0f0d]`}>
       <FunnelLogo />
       <FunnelBar done={qDone} total={questionCount} />
+      <CountdownBanner cd={cd} />
 
       <div className={`${CARD} flex flex-col gap-6`}>
 
@@ -409,6 +440,7 @@ function LeadCapture({ dict, questionCount, showPrice, onSubmit }: LeadCapturePr
     <div className={`${SCREEN} bg-[#0a0a0a]`}>
       <FunnelLogo />
       <FunnelBar done={questionCount} total={questionCount} />
+      <CountdownBanner cd={dict.countdown} />
 
       <div className={`${CARD} flex flex-col gap-7`}>
 
@@ -695,6 +727,7 @@ export function WebsiteCheckFunnel({ dict, variant: variantProp, lang = "de" }: 
           qDone={qDone}
           questionCount={questionCount}
           continueBtn={dict.quiz.continueBtn}
+          cd={dict.countdown}
           onNext={advance}
         />
       );
@@ -708,6 +741,7 @@ export function WebsiteCheckFunnel({ dict, variant: variantProp, lang = "de" }: 
           qDone={qDone}
           questionCount={questionCount}
           continueBtn={dict.quiz.continueBtn}
+          cd={dict.countdown}
           onNext={advance}
         />
       );
