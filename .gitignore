@@ -17,6 +17,9 @@
 .env.test.local
 .env.production.local
 
+# logs
+/logs/
+
 # misc
 .DS_Store
 *.pem
