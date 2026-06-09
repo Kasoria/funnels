@@ -250,9 +250,24 @@ interface QuestionSlideProps {
   questionCount: number;
   dict: FunnelDict;
   onAnswer: (index: number) => void;
+  onBack: () => void;
 }
 
-function QuestionSlide({ slide, qDone, questionCount, dict, onAnswer }: QuestionSlideProps) {
+function BackButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label="Back"
+      className="w-7 h-7 flex items-center justify-center rounded-full text-[rgba(240,239,233,0.5)] hover:text-[rgba(240,239,233,0.9)] hover:bg-[rgba(240,239,233,0.06)] transition-all flex-shrink-0"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" width="13" height="13">
+        <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </button>
+  );
+}
+
+function QuestionSlide({ slide, qDone, questionCount, dict, onAnswer, onBack }: QuestionSlideProps) {
   const [selected, setSelected] = useState<number | null>(null);
 
   return (
@@ -263,13 +278,16 @@ function QuestionSlide({ slide, qDone, questionCount, dict, onAnswer }: Question
 
       <div className={`${CARD} flex flex-col gap-6`}>
 
-        <div className="au d1 flex justify-between">
-          <span className="text-[10px] font-medium tracking-[0.12em] uppercase text-[rgba(240,239,233,0.85)]">
-            {dict.quiz.progressLabel} {qDone + 1} / {questionCount}
-          </span>
-          <span className="text-[10px] text-[#E8C87A] font-semibold">
-            {Math.round((qDone / questionCount) * 100)}%
-          </span>
+        <div className="au d1 flex items-center gap-2">
+          <BackButton onClick={onBack} />
+          <div className="flex justify-between flex-1">
+            <span className="text-[10px] font-medium tracking-[0.12em] uppercase text-[rgba(240,239,233,0.85)]">
+              {dict.quiz.progressLabel} {qDone + 1} / {questionCount}
+            </span>
+            <span className="text-[10px] text-[#E8C87A] font-semibold">
+              {Math.round((qDone / questionCount) * 100)}%
+            </span>
+          </div>
         </div>
 
         <div className="au d2">
@@ -324,9 +342,10 @@ interface TestimonialSlideProps {
   continueBtn: string;
   cd: FunnelDict["countdown"];
   onNext: () => void;
+  onBack: () => void;
 }
 
-function TestimonialSlide({ content, qDone, questionCount, continueBtn, cd, onNext }: TestimonialSlideProps) {
+function TestimonialSlide({ content, qDone, questionCount, continueBtn, cd, onNext, onBack }: TestimonialSlideProps) {
   return (
     <div className={`${SCREEN} bg-[#0f0f0d]`}>
       <FunnelLogo />
@@ -336,7 +355,8 @@ function TestimonialSlide({ content, qDone, questionCount, continueBtn, cd, onNe
       <div className={`${CARD} flex flex-col gap-7`}>
 
         <div className="au d1">
-          <p className="text-[13px] text-[rgba(240,239,233,0.82)] leading-[1.6] italic">
+          <BackButton onClick={onBack} />
+          <p className="text-[13px] text-[rgba(240,239,233,0.82)] leading-[1.6] italic mt-3">
             {content.bridge}
           </p>
         </div>
@@ -375,9 +395,10 @@ interface StatsSlideProps {
   continueBtn: string;
   cd: FunnelDict["countdown"];
   onNext: () => void;
+  onBack: () => void;
 }
 
-function StatsSlide({ content, qDone, questionCount, continueBtn, cd, onNext }: StatsSlideProps) {
+function StatsSlide({ content, qDone, questionCount, continueBtn, cd, onNext, onBack }: StatsSlideProps) {
   return (
     <div className={`${SCREEN} bg-[#0f0f0d]`}>
       <FunnelLogo />
@@ -387,7 +408,8 @@ function StatsSlide({ content, qDone, questionCount, continueBtn, cd, onNext }: 
       <div className={`${CARD} flex flex-col gap-6`}>
 
         <div className="au d1">
-          <p className="text-[13px] text-[rgba(240,239,233,0.82)] leading-[1.6] italic">
+          <BackButton onClick={onBack} />
+          <p className="text-[13px] text-[rgba(240,239,233,0.82)] leading-[1.6] italic mt-3">
             {content.bridge}
           </p>
         </div>
@@ -433,9 +455,10 @@ interface LeadCaptureProps {
   questionCount: number;
   showPrice: boolean;
   onSubmit: (data: LeadData) => Promise<void>;
+  onBack: () => void;
 }
 
-function LeadCapture({ dict, questionCount, showPrice, onSubmit }: LeadCaptureProps) {
+function LeadCapture({ dict, questionCount, showPrice, onSubmit, onBack }: LeadCaptureProps) {
   const [formValues, setFormValues] = useState<LeadData>({ name: "", email: "", phone: "" });
   const [isLoading, setIsLoading] = useState(false);
   const countdown = useCountdown();
@@ -455,7 +478,8 @@ function LeadCapture({ dict, questionCount, showPrice, onSubmit }: LeadCapturePr
 
       <div className={`${CARD} flex flex-col gap-7`}>
 
-        <div className="au d1">
+        <div className="au d1 flex items-center gap-2">
+          <BackButton onClick={onBack} />
           <span className="text-[10px] font-medium tracking-[0.15em] uppercase text-[rgba(240,239,233,0.85)]">
             {lead.stepLabel}
           </span>
@@ -660,6 +684,25 @@ export function WebsiteCheckFunnel({ dict, variant: variantProp, lang = "de" }: 
     }
   };
 
+  const goBack = () => {
+    if (phase === "lead") {
+      const lastSlide = slides[slides.length - 1];
+      if (lastSlide.type === "q") setQDone((n) => n - 1);
+      setSlideIndex(slides.length - 1);
+      setPhase("quiz");
+      return;
+    }
+    if (phase === "quiz") {
+      if (slideIndex === 0) {
+        setPhase("landing");
+        return;
+      }
+      const prevSlide = slides[slideIndex - 1];
+      if (prevSlide.type === "q") setQDone((n) => n - 1);
+      setSlideIndex((n) => n - 1);
+    }
+  };
+
   const handleAnswer = (selectedIndex: number) => {
     const currentSlide = slides[slideIndex] as QuestionSlideData;
     posthog?.capture("funnel_question_answered", {
@@ -730,6 +773,7 @@ export function WebsiteCheckFunnel({ dict, variant: variantProp, lang = "de" }: 
           questionCount={questionCount}
           dict={dict}
           onAnswer={handleAnswer}
+          onBack={goBack}
         />
       );
     }
@@ -744,6 +788,7 @@ export function WebsiteCheckFunnel({ dict, variant: variantProp, lang = "de" }: 
           continueBtn={dict.quiz.continueBtn}
           cd={dict.countdown}
           onNext={advance}
+          onBack={goBack}
         />
       );
     }
@@ -758,6 +803,7 @@ export function WebsiteCheckFunnel({ dict, variant: variantProp, lang = "de" }: 
           continueBtn={dict.quiz.continueBtn}
           cd={dict.countdown}
           onNext={advance}
+          onBack={goBack}
         />
       );
     }
@@ -770,6 +816,7 @@ export function WebsiteCheckFunnel({ dict, variant: variantProp, lang = "de" }: 
         questionCount={questionCount}
         showPrice={showPrice}
         onSubmit={handleLead}
+        onBack={goBack}
       />
     );
   }
