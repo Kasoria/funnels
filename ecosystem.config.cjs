@@ -4,7 +4,7 @@ module.exports = {
       name: "kasoria-funnels",
       cwd: __dirname,
       script: "node_modules/next/dist/bin/next",
-      args: "start -p 3018",
+      args: "start",
       instances: 1,
       exec_mode: "fork",
       autorestart: true,
