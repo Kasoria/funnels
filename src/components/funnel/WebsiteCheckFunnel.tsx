@@ -15,8 +15,8 @@ declare global {
 // ─── COUNTDOWN ────────────────────────────────────────────────────────────────
 
 type CountdownTime =
-  | { mode: "days"; days: number }
-  | { mode: "hours"; h: string; m: string; s: string };
+  | { mode: "days"; days: number; h: string }
+  | { mode: "hours"; h: string; m: string };
 
 const HOURS_48 = 48 * 3_600_000;
 
@@ -32,17 +32,19 @@ function useCountdown(): CountdownTime | null {
     const tick = () => {
       const delta = deadline - Date.now();
       if (delta <= 0) {
-        setTime({ mode: "hours", h: "00", m: "00", s: "00" });
+        setTime({ mode: "hours", h: "00", m: "00" });
         return;
       }
       if (delta > HOURS_48) {
-        setTime({ mode: "days", days: Math.ceil(delta / 86_400_000) });
+        const totalHours = Math.floor(delta / 3_600_000);
+        const days = Math.floor(totalHours / 24);
+        const remainingHours = totalHours % 24;
+        setTime({ mode: "days", days, h: String(remainingHours).padStart(2, "0") });
       } else {
         setTime({
           mode: "hours",
           h: String(Math.floor(delta / 3_600_000)).padStart(2, "0"),
           m: String(Math.floor((delta % 3_600_000) / 60_000)).padStart(2, "0"),
-          s: String(Math.floor((delta % 60_000) / 1_000)).padStart(2, "0"),
         });
       }
     };
@@ -65,8 +67,8 @@ function CountdownBanner({ cd }: CountdownBannerProps) {
   if (!countdown) return null;
 
   const value = countdown.mode === "days"
-    ? `${countdown.days} ${cd.days}`
-    : `${countdown.h}:${countdown.m}:${countdown.s}`;
+    ? `${countdown.days} ${cd.days} · ${countdown.h} ${cd.hours}`
+    : `${countdown.h} ${cd.hours} · ${countdown.m} ${cd.minutes}`;
 
   return (
     <div className="absolute top-[3px] left-0 right-0 flex items-center justify-center gap-1.5 bg-[rgba(232,200,122,0.07)] border-b border-[rgba(232,200,122,0.1)] py-1.5 px-4">
@@ -198,30 +200,22 @@ function Landing({ dict, lang, onStart }: { dict: FunnelDict; lang: "de" | "en";
             <span className="inline-flex items-center bg-[rgba(232,200,122,0.12)] border border-[rgba(232,200,122,0.3)] text-[#E8C87A] rounded-full px-3 py-1 text-[11px] font-bold tracking-[0.06em] uppercase">
               {cd.badge}
             </span>
-            {countdown.mode === "days" ? (
-              <div className="bg-[rgba(232,200,122,0.06)] border border-[rgba(232,200,122,0.2)] rounded-[7px] px-6 py-2 text-center">
-                <div className="text-[22px] font-bold text-[#f0efe9] leading-none">{countdown.days}</div>
-                <div className="text-[9px] font-medium tracking-[0.1em] uppercase text-[rgba(240,239,233,0.65)] mt-0.5">{cd.days}</div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5 justify-center">
-                {([
-                  { val: countdown.h, label: cd.hours },
-                  { val: countdown.m, label: cd.minutes },
-                  { val: countdown.s, label: cd.seconds },
-                ] as const).map(({ val, label }, idx) => (
-                  <Fragment key={label}>
-                    <div className="bg-[rgba(232,200,122,0.06)] border border-[rgba(232,200,122,0.2)] rounded-[7px] px-3 py-2 min-w-[52px] text-center">
-                      <div className="text-[22px] font-bold text-[#f0efe9] leading-none">{val}</div>
-                      <div className="text-[9px] font-medium tracking-[0.1em] uppercase text-[rgba(240,239,233,0.65)] mt-0.5">{label}</div>
-                    </div>
-                    {idx < 2 && (
-                      <span className="text-[20px] text-[rgba(240,239,233,0.4)] mb-2">:</span>
-                    )}
-                  </Fragment>
-                ))}
-              </div>
-            )}
+            <div className="flex items-center gap-1.5 justify-center">
+              {(countdown.mode === "days"
+                ? [{ val: String(countdown.days), label: cd.days }, { val: countdown.h, label: cd.hours }]
+                : [{ val: countdown.h, label: cd.hours }, { val: countdown.m, label: cd.minutes }]
+              ).map(({ val, label }, idx) => (
+                <Fragment key={label}>
+                  <div className="bg-[rgba(232,200,122,0.06)] border border-[rgba(232,200,122,0.2)] rounded-[7px] px-3 py-2 min-w-[52px] text-center">
+                    <div className="text-[22px] font-bold text-[#f0efe9] leading-none">{val}</div>
+                    <div className="text-[9px] font-medium tracking-[0.1em] uppercase text-[rgba(240,239,233,0.65)] mt-0.5">{label}</div>
+                  </div>
+                  {idx < 1 && (
+                    <span className="text-[20px] text-[rgba(240,239,233,0.4)] mb-2">:</span>
+                  )}
+                </Fragment>
+              ))}
+            </div>
           </div>
         )}
 
@@ -496,8 +490,8 @@ function LeadCapture({ dict, questionCount, showPrice, onSubmit }: LeadCapturePr
                 <p className="text-[11px] font-medium text-[rgba(232,200,122,0.6)] mt-0.5">
                   {lead.offer.countdown}{" "}
                   {countdown.mode === "days"
-                    ? `${countdown.days} ${dict.countdown.days}`
-                    : `${countdown.h}:${countdown.m}:${countdown.s}`}
+                    ? `${countdown.days} ${dict.countdown.days} · ${countdown.h} ${dict.countdown.hours}`
+                    : `${countdown.h} ${dict.countdown.hours} · ${countdown.m} ${dict.countdown.minutes}`}
                 </p>
               )}
             </div>
