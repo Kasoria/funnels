@@ -26,6 +26,7 @@ export interface FunnelResult {
 
 export interface FunnelDict {
   countdown: {
+    days: string;
     hours: string;
     minutes: string;
     seconds: string;

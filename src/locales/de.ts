@@ -2,6 +2,7 @@ import type { FunnelDict } from "./types";
 
 export const de = {
   countdown: {
+    days: "Tage",
     hours: "Std",
     minutes: "Min",
     seconds: "Sek",
